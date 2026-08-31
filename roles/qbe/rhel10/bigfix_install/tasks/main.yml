@@ -1,0 +1,37 @@
+# roles/bigfix_install/tasks/main.yml
+---
+- name: Check available BigFix version
+  become: true
+  ansible.builtin.dnf:
+    list: "{{ agents.bigfix.package }}"
+  register: bigfix_available
+
+- name: Set BigFix v11 availability fact
+  ansible.builtin.set_fact:
+    bigfix_v11_available: "{{ bigfix_available.results | selectattr('version', 'version_compare', '11.0', '>=') | list | length > 0 }}"
+
+- name: Install BigFix Agent (v11+)
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ agents.bigfix.package }}"
+    state: present
+  when: bigfix_v11_available
+  notify: Restart besclient
+
+- name: Configure BigFix relay
+  become: true
+  ansible.builtin.template:
+    src: besclient.config.j2
+    dest: "{{ agents.bigfix.config_file }}"
+    owner: root
+    group: root
+    mode: '0640'
+  when: bigfix_v11_available
+  notify: Restart besclient
+
+- name: Warn if BigFix v11 not available
+  ansible.builtin.debug:
+    msg: >
+      WARNING: BigFix v11+ not available in repo. Skipping installation.
+      RHEL 10 requires BigFix v11. See HLD Issue #1.
+  when: not bigfix_v11_available

@@ -1,0 +1,28 @@
+# group_vars/platform_vcenter/baseline.yml
+# =============================================================================
+# vCenter Platform-Specific Baseline Overrides
+# =============================================================================
+# Uses separate variable names so platform-specific lists don't replace
+# the base lists. The baseline_check role concatenates these at runtime.
+# A host must be a member of the platform_vcenter inventory group.
+# =============================================================================
+---
+baseline_description: "RHEL 10 vCenter platform overlay"
+
+# --- vCenter-specific packages (separate variable — concatenated by baseline_check) ---
+packages_platform_required:
+  - name: open-vm-tools
+    version: null
+  - name: perl-File-Temp
+    version: null
+
+# --- vCenter-specific services (separate variable — concatenated by baseline_check) ---
+services_platform_enabled:
+  - name: vmtoolsd
+
+# --- vCenter-specific kernel parameters (merged into base by hash_behaviour=merge) ---
+kernel_parameters:
+  vm.dirty_ratio:
+    value: "15"
+  vm.dirty_background_ratio:
+    value: "5"

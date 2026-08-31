@@ -1,10 +1,217 @@
+# playbooks/d2_drift_remediate.yml
+# =============================================================================
+# Auto-remediation for non-prod hosts with minor/moderate drift.
+# Runs AFTER d2_drift_detect.yml in the AAP workflow.
+# Uses host_drift_summary.role_drift (built by detect playbook) to determine
+# which Day 1 roles to re-run.
+#
+# Category-to-role mappings are defined in group_vars/all/remediation.yml.
+# To add/change a mapping, edit that file — no playbook changes needed.
+# =============================================================================
 ---
-- hosts: all
+# =========================================================================
+# Play 1: Remediate drifted non-prod hosts
+# =========================================================================
+- name: "Day 2 -- Drift Auto-Remediation"
+  hosts: "{{ target_hosts | default('rhel10_all') }}"
+  become: true
+  serial: "{{ remediate_serial | default('10%') }}"
+  gather_facts: true
+  vars:
+    drift_auto_remediate: >-
+      {{ hostvars[inventory_hostname].drift_auto_remediate
+         | default(environment != 'prod') }}
+    _role_drift: >-
+      {{ hostvars[inventory_hostname].host_drift_summary.role_drift | default([]) }}
+    _drifted_role_names: >-
+      {{ _role_drift | selectattr('changed', 'equalto', true) | map(attribute='role') | list }}
+
+  # Gate: only run on hosts where auto-remediation is enabled and drift exists
+  when:
+    - drift_auto_remediate | bool
+    - environment != 'prod'
+    - hostvars[inventory_hostname].host_drift_summary.has_drift | default(false) | bool
+    - hostvars[inventory_hostname].host_drift_summary.baseline_drift.max_severity | default('moderate') not in ['major', 'critical']
+    - not (hostvars[inventory_hostname].host_drift_summary.aide_drift | default(false) | bool)
+
   tasks:
-  - name: Create gpg key directory for importing keys
-    file:
-      path: "{{ item }}"
-      state: directory
-      mode: 0755
-    with_items:
-      - /etc/pki/rpm-gpg/import
+    - name: Log remediation start
+      ansible.builtin.debug:
+        msg: >-
+          Starting auto-remediation for {{ inventory_hostname }}
+          ({{ environment }}/{{ region }}).
+          Drifted roles: {{ _drifted_role_names | join(', ') }}
+
+    # --- Re-run drifted Day 1 roles in enforce mode ---
+    # Role names come from group_vars/all/remediation.yml (category_role_map).
+
+    - name: Remediate baseline packages
+      ansible.builtin.include_role:
+        name: qbe.rhel.packages_baseline
+      when: "'packages_baseline' in _drifted_role_names"
+
+    - name: Remediate baseline services
+      ansible.builtin.include_role:
+        name: qbe.rhel.services_baseline
+      when: "'services_baseline' in _drifted_role_names"
+
+    - name: Remediate OS hardening (kernel, SSH, SELinux, firewall, files, banners, cron)
+      ansible.builtin.include_role:
+        name: qbe.rhel.os_hardening
+      when: "'os_hardening' in _drifted_role_names"
+
+    - name: Remediate authentication (PAM, login.defs)
+      ansible.builtin.include_role:
+        name: qbe.rhel.auth
+      when: "'auth' in _drifted_role_names"
+
+    - name: Remediate audit rules and auditd config
+      ansible.builtin.include_role:
+        name: qbe.rhel.auditd
+      when: "'auditd' in _drifted_role_names"
+
+    - name: Remediate rsyslog configuration
+      ansible.builtin.include_role:
+        name: qbe.rhel.rsyslog_configure
+      when: "'rsyslog_configure' in _drifted_role_names"
+
+    - name: Remediate DNS configuration
+      ansible.builtin.include_role:
+        name: qbe.rhel.dns_configure
+      when: "'dns_configure' in _drifted_role_names"
+
+    - name: Remediate NTP/chrony configuration
+      ansible.builtin.include_role:
+        name: qbe.rhel.timesync
+      when: "'timesync' in _drifted_role_names"
+
+    - name: Remediate filesystem mount options
+      ansible.builtin.include_role:
+        name: qbe.rhel.mounts_enforce
+      when: "'mounts_enforce' in _drifted_role_names"
+
+    # --- Agent-specific remediation ---
+
+    - name: Remediate Qualys agent
+      ansible.builtin.include_role:
+        name: qbe.rhel.qualys_install
+      when: "'qualys_install' in _drifted_role_names"
+
+    - name: Remediate Dynatrace agent
+      ansible.builtin.include_role:
+        name: qbe.rhel.dynatrace_install
+      when: "'dynatrace_install' in _drifted_role_names"
+
+    - name: Remediate Illumio VEN
+      ansible.builtin.include_role:
+        name: qbe.rhel.illumio_install
+      when: "'illumio_install' in _drifted_role_names"
+
+    - name: Remediate Defender
+      ansible.builtin.include_role:
+        name: qbe.rhel.defender_install
+      when: "'defender_install' in _drifted_role_names"
+
+    - name: Remediate BigFix agent
+      ansible.builtin.include_role:
+        name: qbe.rhel.bigfix_install
+      when: "'bigfix_install' in _drifted_role_names"
+
+    - name: Remediate ILMT scanner
+      ansible.builtin.include_role:
+        name: qbe.rhel.ilmt_install
+      when: "'ilmt_install' in _drifted_role_names"
+
+    - name: Remediate SNOW Discovery agent
+      ansible.builtin.include_role:
+        name: qbe.rhel.snow_discovery_install
+      when: "'snow_discovery_install' in _drifted_role_names"
+
+    # --- Post-remediation verification scan ---
+    - name: Re-run baseline check after remediation
+      ansible.builtin.include_role:
+        name: qbe.rhel.baseline_check
+
+    - name: Build post-remediation summary
+      ansible.builtin.set_fact:
+        remediation_result:
+          hostname: "{{ inventory_hostname }}"
+          environment: "{{ environment }}"
+          region: "{{ region }}"
+          roles_remediated: "{{ _drifted_role_names }}"
+          post_scan_clean: "{{ not (drift_results.has_drift | default(false)) }}"
+          pre_drift_count: >-
+            {{ hostvars[inventory_hostname].host_drift_summary.baseline_drift.total_drift | default(0) }}
+          post_drift_count: "{{ drift_results.total_drift | default(0) }}"
+          timestamp: "{{ ansible_date_time.iso8601 }}"
+
+# =========================================================================
+# Play 2: Report remediation outcome
+# =========================================================================
+- name: "Day 2 -- Drift Remediation Report"
+  hosts: localhost
+  gather_facts: true
+  connection: local
+  vars:
+    remediated_hosts: >-
+      {{ groups[target_hosts | default('rhel10_all')]
+         | map('extract', hostvars, 'remediation_result')
+         | select('defined') | list }}
+    successful_remediations: >-
+      {{ remediated_hosts | selectattr('post_scan_clean', 'equalto', true) | list }}
+    failed_remediations: >-
+      {{ remediated_hosts | rejectattr('post_scan_clean', 'equalto', true) | list }}
+  tasks:
+    - name: Log remediation summary
+      ansible.builtin.debug:
+        msg: |
+          Auto-Remediation Summary
+          ========================
+          Total remediated: {{ remediated_hosts | length }}
+          Successful (post-scan clean): {{ successful_remediations | length }}
+          Failed (still drifted): {{ failed_remediations | length }}
+
+          {% for host in successful_remediations %}
+          FIXED: {{ host.hostname }} ({{ host.environment }}/{{ host.region }})
+            Roles: {{ host.roles_remediated | join(', ') }}
+            Drift items: {{ host.pre_drift_count }} → {{ host.post_drift_count }}
+          {% endfor %}
+
+          {% for host in failed_remediations %}
+          STILL DRIFTED: {{ host.hostname }} ({{ host.environment }}/{{ host.region }})
+            Roles attempted: {{ host.roles_remediated | join(', ') }}
+            Drift items: {{ host.pre_drift_count }} → {{ host.post_drift_count }}
+          {% endfor %}
+
+    - name: Pass remediation results to workflow
+      ansible.builtin.set_stats:
+        data:
+          remediation_total: "{{ remediated_hosts | length }}"
+          remediation_successful: "{{ successful_remediations | length }}"
+          remediation_failed: "{{ failed_remediations | length }}"
+          remediation_failed_hosts: >-
+            {{ failed_remediations | map(attribute='hostname') | list }}
+
+    - name: Create ServiceNow ticket for failed remediations
+      when: failed_remediations | length > 0
+      servicenow.itsm.change_request:
+        state: new
+        type: normal
+        short_description: >-
+          Auto-remediation incomplete -- {{ failed_remediations | length }}
+          host(s) still drifted -- {{ ansible_date_time.date }}
+        description: |
+          Auto-remediation was attempted but the following hosts remain drifted
+          after re-scan. Manual investigation required.
+
+          {% for host in failed_remediations %}
+          Host: {{ host.hostname }} ({{ host.environment }}/{{ host.region }})
+          Roles attempted: {{ host.roles_remediated | join(', ') }}
+          Drift items before: {{ host.pre_drift_count }}
+          Drift items after: {{ host.post_drift_count }}
+          {% endfor %}
+        risk: moderate
+        impact: medium
+        assignment_group: "Linux-Operations"
+        category: Configuration Management
+      no_log: true

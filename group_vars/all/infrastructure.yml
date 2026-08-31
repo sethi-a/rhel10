@@ -1,0 +1,191 @@
+# group_vars/all/infrastructure.yml
+# =============================================================================
+# Infrastructure Endpoints and Credentials (All Regions)
+# =============================================================================
+# These variables are consumed by firewall rules, agent configs, and Day 2
+# playbooks. Region-specific values are keyed by region name (APAC, EU, NA)
+# and resolved in baseline.yml via Jinja lookups: {{ ntp_servers[region] }}
+# =============================================================================
+---
+
+# --- Network Subnets ---
+mgmt_subnet: "10.0.0.0/16"           # TODO: Replace with actual management subnet CIDR
+monitoring_subnet: "10.1.0.0/16"      # TODO: Replace with actual monitoring subnet CIDR
+
+# --- Satellite Servers (per region and platform) ---
+satellite_servers:
+  APAC:
+    azure: "satellite-apac-az.qbe.com"      # TODO: Replace with actual FQDN
+    vcenter: "satellite-apac-vc.qbe.com"     # TODO: Replace with actual FQDN
+  EU:
+    azure: "satellite-eu-az.qbe.com"
+    vcenter: "satellite-eu-vc.qbe.com"
+  NA:
+    azure: "satellite-na-az.qbe.com"
+    vcenter: "satellite-na-vc.qbe.com"
+satellite_validate_certs: true
+
+# --- Satellite Activation Keys (per environment and region) ---
+satellite_activation_keys:
+  dev:
+    APAC: "rhel10-dev-apac"
+    EU: "rhel10-dev-eu"
+    NA: "rhel10-dev-na"
+  test:
+    APAC: "rhel10-test-apac"
+    EU: "rhel10-test-eu"
+    NA: "rhel10-test-na"
+  prod:
+    APAC: "rhel10-prod-apac"
+    EU: "rhel10-prod-eu"
+    NA: "rhel10-prod-na"
+
+# --- Agent Server Endpoints (per region) ---
+illumio_pce:
+  APAC: "illumio-pce.apac.qbe.com"
+  EU: "illumio-pce.eu.qbe.com"
+  NA: "illumio-pce.na.qbe.com"
+
+qualys_server:
+  APAC: "qualys.apac.qbe.com"
+  EU: "qualys.eu.qbe.com"
+  NA: "qualys.na.qbe.com"
+
+dynatrace_server:
+  APAC: "dynatrace.apac.qbe.com"
+  EU: "dynatrace.eu.qbe.com"
+  NA: "dynatrace.na.qbe.com"
+
+bigfix_server:
+  APAC: "bigfix.apac.qbe.com"
+  EU: "bigfix.eu.qbe.com"
+  NA: "bigfix.na.qbe.com"
+
+snow_discovery_server:
+  APAC: "snow-discovery.apac.qbe.com"
+  EU: "snow-discovery.eu.qbe.com"
+  NA: "snow-discovery.na.qbe.com"
+
+syslog_server:
+  APAC: "syslog.apac.qbe.com"
+  EU: "syslog.eu.qbe.com"
+  NA: "syslog.na.qbe.com"
+
+# --- DNS Infrastructure ---
+dns_servers:
+  APAC:
+    - "10.50.1.10"
+    - "10.50.1.11"
+  EU:
+    - "10.100.1.10"
+    - "10.100.1.11"
+  NA:
+    - "10.200.1.10"
+    - "10.200.1.11"
+
+dns_zones:
+  APAC: "apac.qbe.com"
+  EU: "eu.qbe.com"
+  NA: "na.qbe.com"
+
+dns_search_domains:
+  APAC:
+    - "apac.qbe.com"
+    - "qbe.com"
+  EU:
+    - "eu.qbe.com"
+    - "qbe.com"
+  NA:
+    - "na.qbe.com"
+    - "qbe.com"
+
+# --- NTP Servers (per region) ---
+ntp_servers:
+  APAC:
+    - "ntp1.apac.qbe.com"
+    - "ntp2.apac.qbe.com"
+  EU:
+    - "ntp1.eu.qbe.com"
+    - "ntp2.eu.qbe.com"
+  NA:
+    - "ntp1.na.qbe.com"
+    - "ntp2.na.qbe.com"
+
+# --- Dynatrace Host Group ---
+dynatrace_host_group: "qbe-linux"      # TODO: Replace with actual host group
+
+# --- Satellite Organization ---
+satellite_organization: "QBE"          # TODO: Replace with actual Satellite org
+
+# --- Email / Notifications ---
+smtp_server: "smtp.qbe.com"           # TODO: Replace with actual SMTP relay
+smtp_port: 25
+ops_email:
+  APAC:
+    - "linux-ops-apac@qbe.com"
+  EU:
+    - "linux-ops-eu@qbe.com"
+  NA:
+    - "linux-ops-na@qbe.com"
+
+# --- AAP Controller ---
+aap_controller_url: "https://aap.qbe.com"    # TODO: Replace with actual AAP URL
+aap_project_id: 42                              # TODO: Replace with actual project ID
+
+# --- Satellite Custom Repo Labels ---
+# These map to repo IDs in the Satellite Content View.
+# Used by agent install roles via enablerepo to ensure packages
+# are pulled from the correct custom repo, not a random match.
+# Must match the repo_id values in baseline.yml → repositories.
+qualys_agent_repo: "qbe-qualys-agent"
+illumio_agent_repo: "qbe-illumio-ven"
+defender_repo: "qbe-microsoft-defender"
+dynatrace_repo: "qbe-dynatrace-oneagent"
+bigfix_repo: "qbe-bigfix-agent"
+ilmt_repo: "qbe-ilmt-scanner"
+snow_discovery_repo: "qbe-snow-discovery"
+
+# --- OS Hardening (referenced in os_hardening role) ---
+crypto_policy: "FIPS"
+build_accounts_to_remove:
+  - "builder"
+  - "deploy"
+  - "packer"
+
+# --- Active Directory ---
+ad_domain: "qbe.com"                   # TODO: Replace with actual AD domain
+ad_ou: "OU=Linux,OU=Servers,DC=qbe,DC=com"
+ad_join_user: "svc_adjoin"             # Credential from AAP vault
+ad_secondary_domains:
+  APAC:
+    - domain: "apac.qbe.com"
+      ou: "OU=Linux,OU=Servers,DC=apac,DC=qbe,DC=com"
+  EU:
+    - domain: "eu.qbe.com"
+      ou: "OU=Linux,OU=Servers,DC=eu,DC=qbe,DC=com"
+  NA:
+    - domain: "na.qbe.com"
+      ou: "OU=Linux,OU=Servers,DC=na,DC=qbe,DC=com"
+ad_keytabs:
+  APAC:
+    - "/etc/krb5.keytab.apac"
+  EU:
+    - "/etc/krb5.keytab.eu"
+  NA:
+    - "/etc/krb5.keytab.na"
+
+# --- ServiceNow ---
+snow_instance: "qbe.service-now.com"   # TODO: Replace with actual SNOW instance
+snow_assignment_group: "Linux-Operations"
+
+# --- Escalation Contacts ---
+escalation_contacts:
+  APAC:
+    oncall: "linux-oncall-apac@qbe.com"
+    manager: "linux-manager-apac@qbe.com"
+  EU:
+    oncall: "linux-oncall-eu@qbe.com"
+    manager: "linux-manager-eu@qbe.com"
+  NA:
+    oncall: "linux-oncall-na@qbe.com"
+    manager: "linux-manager-na@qbe.com"

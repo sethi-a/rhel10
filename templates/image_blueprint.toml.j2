@@ -1,0 +1,137 @@
+# {{ ansible_managed }}
+# Generated from group_vars/all/baseline.yml + cis_profile.yml
+# Platform: {{ platform_name }}
+# Do not edit manually — regenerate with: ansible-playbook playbooks/generate_blueprint_toml.yml
+
+name = "qbe-rhel10-{{ platform_name }}"
+description = "QBE RHEL 10 Baseline for {{ platform_name | capitalize }} - CIS Level 1 Compliant"
+version = "{{ baseline.baseline_version }}"
+modules = []
+groups = []
+
+# ---------------------------------------------------------------------------
+# Packages — required (from baseline.packages.required, excluding agents)
+# ---------------------------------------------------------------------------
+# Agent packages (qualys, illumio, defender, etc.) are installed at Day 1 by
+# their respective roles from Satellite custom repos — not baked into the image.
+{% set agent_packages = baseline.agents | dict2items | map(attribute='value.package') | list %}
+{% for pkg in baseline.packages.required %}
+{% if pkg.name not in agent_packages %}
+
+[[packages]]
+name = "{{ pkg.name }}"
+version = "{{ pkg.version if pkg.version else '*' }}"
+{% endif %}
+{% endfor %}
+
+# ---------------------------------------------------------------------------
+# Packages — image-build common (from baseline.image_config.common_packages)
+# ---------------------------------------------------------------------------
+{% for pkg in baseline.image_config.common_packages %}
+
+[[packages]]
+name = "{{ pkg }}"
+version = "*"
+{% endfor %}
+
+# ---------------------------------------------------------------------------
+# Packages — platform-specific (from group_vars/platform_{{ platform_name }})
+# ---------------------------------------------------------------------------
+{% for pkg in platform_packages %}
+
+[[packages]]
+name = "{{ pkg.name }}"
+version = "{{ pkg.version if pkg.version else '*' }}"
+{% endfor %}
+
+[customizations]
+
+# ---------------------------------------------------------------------------
+# Packages — prohibited (from baseline.packages.prohibited)
+# ---------------------------------------------------------------------------
+{% for pkg in baseline.packages.prohibited %}
+
+[[customizations.packages]]
+name = "{{ pkg.name }}"
+exclude = true
+{% endfor %}
+
+# ---------------------------------------------------------------------------
+# Filesystem layout (sizes from image_config.partitions, mount options from
+# baseline.filesystem_mounts where the mountpoint matches)
+# ---------------------------------------------------------------------------
+{% for part in baseline.image_config.partitions %}
+
+[[customizations.filesystem]]
+mountpoint = "{{ part.mountpoint }}"
+size = {{ part.size }}
+type = "{{ part.type }}"
+{% if part.mountpoint in baseline.filesystem_mounts %}
+options = "{{ baseline.filesystem_mounts[part.mountpoint].options | join(',') }}"
+{% endif %}
+{% endfor %}
+
+# ---------------------------------------------------------------------------
+# Kernel boot parameters
+# ---------------------------------------------------------------------------
+
+[customizations.kernel]
+append = "{{ baseline.image_config.kernel_append }}"
+
+# ---------------------------------------------------------------------------
+# Service accounts
+# ---------------------------------------------------------------------------
+{% for user in baseline.image_config.users %}
+
+[[customizations.user]]
+name = "{{ user.name }}"
+description = "{{ user.description }}"
+{% if user.groups is defined %}
+groups = {{ user.groups | to_json }}
+{% endif %}
+uid = {{ user.uid }}
+gid = {{ user.gid }}
+{% endfor %}
+
+# ---------------------------------------------------------------------------
+# SSH authorised keys
+# ---------------------------------------------------------------------------
+{% for user in baseline.image_config.users %}
+{% if user.ssh_key is defined %}
+
+[[customizations.sshkey]]
+user = "{{ user.name }}"
+key = "{{ user.ssh_key }}"
+{% endif %}
+{% endfor %}
+
+# ---------------------------------------------------------------------------
+# Timezone and locale
+# ---------------------------------------------------------------------------
+
+[customizations.timezone]
+timezone = "{{ baseline.image_config.timezone }}"
+
+[customizations.locale]
+languages = {{ baseline.image_config.locale.languages | to_json }}
+keyboard = "{{ baseline.image_config.locale.keyboard }}"
+
+# ---------------------------------------------------------------------------
+# Firewall (baseline defines backend={{ baseline.firewall.backend }})
+# ---------------------------------------------------------------------------
+
+[customizations.firewall]
+enabled = true
+
+[[customizations.firewall.services]]
+enabled = ["ssh"]
+
+# ---------------------------------------------------------------------------
+# OpenSCAP — CIS Level 1 profile with QBE tailoring
+# (from group_vars/all/cis_profile.yml)
+# ---------------------------------------------------------------------------
+
+[customizations.openscap]
+profile_id = "{{ cis_profile.base_profile }}"
+datastream = "{{ cis_profile.content_path }}"
+tailoring_file = "{{ cis_profile.tailoring_path }}"

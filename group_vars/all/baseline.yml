@@ -1,0 +1,862 @@
+# group_vars/all/baseline.yml
+# =============================================================================
+# RHEL 10 Expected VM State Baseline (Single Source of Truth)
+# =============================================================================
+# This file defines the desired state for all RHEL 10 systems managed by QBE.
+# It serves ALL lifecycle stages:
+#   - Day 0: CI reads this file to generate tailoring XML + blueprint TOML
+#   - Day 1: Ansible roles consume these variables to configure deployed VMs
+#   - Day 2: qbe.rhel.baseline_check role compares actual state against these values
+#
+# Maintenance:
+#   - All changes require a Git pull request and peer review.
+#   - Environment overrides: group_vars/env_*/baseline.yml
+#   - Platform overrides:    group_vars/platform_*/baseline.yml
+#   - Region endpoints:      Defined in group_vars/all/infrastructure.yml (keyed by region)
+#   - Ansible merges group_vars automatically via variable precedence.
+#
+# Severity levels (optional — can be added per-item when classification is needed):
+#   critical — Security incident raised; immediate investigation required
+#   major    — ServiceNow change request; remediate within 24 hours
+#   moderate — ServiceNow change request; remediate within 72 hours
+#   minor    — Logged in drift report; remediate at next maintenance window
+# =============================================================================
+---
+baseline_version: "1.0.0"
+baseline_description: "RHEL 10 CIS Level 1 hardened VM baseline"
+last_updated: "2026-08-25"
+maintained_by: "Linux Platform Engineering"
+
+# =============================================================================
+# REPOSITORIES
+# =============================================================================
+# Documents every package source a RHEL 10 VM must have access to.
+# Repos are delivered via Satellite Content Views — the activation key
+# (satellite_activation_keys in infrastructure.yml) binds the VM to the
+# correct Content View at registration time.
+#
+# This section does NOT configure repos on the host (register_vm does that).
+# Its purpose is traceability: for any package in the baseline, you can trace
+# it back to the repo that provides it.
+#
+# Content View promotion (dev → test → prod) controls which package versions
+# are available per environment. Version pins in env_*/baseline.yml must match
+# versions already promoted into that environment's Content View.
+repositories:
+  rhel_base:
+    repo_id: "rhel-10-for-x86_64-baseos-rpms"
+    source: "Red Hat CDN via Satellite"
+    provides:
+      - "Core OS packages (glibc, kernel, systemd, openssl, etc.)"
+      - "Security tooling (aide, openscap-scanner, audit)"
+      - "Network utilities (nftables, chrony, rsyslog)"
+  rhel_appstream:
+    repo_id: "rhel-10-for-x86_64-appstream-rpms"
+    source: "Red Hat CDN via Satellite"
+    provides:
+      - "Application runtime packages"
+      - "Python, Perl, and language modules"
+      - "Additional security and compliance tools"
+  qualys:
+    repo_id: "qbe-qualys-agent"
+    source: "Satellite custom repo (synced from Qualys)"
+    provides:
+      - "qualys-cloud-agent"
+  illumio:
+    repo_id: "qbe-illumio-ven"
+    source: "Satellite custom repo (synced from Illumio)"
+    provides:
+      - "illumio-ven"
+  defender:
+    repo_id: "qbe-microsoft-defender"
+    source: "Satellite custom repo (synced from Microsoft)"
+    provides:
+      - "mdatp"
+  dynatrace:
+    repo_id: "qbe-dynatrace-oneagent"
+    source: "Satellite custom repo (synced from Dynatrace)"
+    provides:
+      - "Dynatrace-OneAgent"
+  bigfix:
+    repo_id: "qbe-bigfix-agent"
+    source: "Satellite custom repo (synced from HCL)"
+    provides:
+      - "BESAgent"
+  ilmt:
+    repo_id: "qbe-ilmt-scanner"
+    source: "Satellite custom repo (synced from IBM)"
+    provides:
+      - "ilmt-scanner"
+  snow_discovery:
+    repo_id: "qbe-snow-discovery"
+    source: "Satellite custom repo (synced from Snow Software)"
+    provides:
+      - "snow-discovery-agent"
+
+# =============================================================================
+# PACKAGES
+# =============================================================================
+# version: null = any version acceptable; "x.y.z" = exact version required
+packages:
+  required:
+    # --- Core OS and security ---
+    - name: openscap-scanner
+      version: null
+    - name: aide
+      version: null
+    - name: audispd-plugins
+      version: null
+    - name: nftables
+      version: null
+    - name: chrony
+      version: null
+    - name: realmd
+      version: null
+    - name: sssd
+      version: null
+    - name: krb5-workstation
+      version: null
+    - name: rsyslog
+      version: null
+    - name: policycoreutils-python-utils
+      version: null
+    - name: libreswan
+      version: null
+
+    # --- Security and monitoring agents ---
+    - name: qualys-cloud-agent
+      version: null
+    - name: illumio-ven
+      version: null
+    - name: oneagent
+      version: null
+    - name: mdatp
+      version: null
+    - name: BESAgent
+      version: null
+    - name: ilmt-scanner
+      version: null
+    - name: snow-discovery-agent
+      version: null
+
+  prohibited:
+    # --- Packages that must not be present on hardened systems ---
+    - name: telnet-server
+    - name: telnet
+    - name: rsh-server
+    - name: rsh
+    - name: tftp-server
+    - name: tftp
+    - name: vsftpd
+    - name: xinetd
+    - name: xorg-x11-server-Xorg
+    - name: avahi-daemon
+    - name: cups
+    - name: ypserv
+    - name: ypbind
+    - name: talk-server
+    - name: talk
+    - name: nfs-utils
+    - name: net-snmp
+    - name: sendmail
+
+# =============================================================================
+# SERVICES
+# =============================================================================
+services:
+  enabled:
+    # --- Core OS services ---
+    - name: sshd
+    - name: chronyd
+    - name: sssd
+    - name: auditd
+    - name: nftables
+    - name: oddjobd
+    - name: rsyslog
+    - name: systemd-journald
+    - name: crond
+
+    # --- Security agents ---
+    - name: qualys-cloud-agent
+    - name: illumio-ven
+    - name: oneagent
+    - name: mdatp
+    - name: besclient
+    - name: ilmt-scanner
+    - name: snow-discovery-agent
+
+  disabled:
+    - name: rpcbind
+    - name: avahi-daemon
+    - name: cups
+    - name: nfs-server
+    - name: rsyncd
+    - name: autofs
+    - name: named
+    - name: dhcpd
+    - name: dovecot
+    - name: httpd
+    - name: smb
+    - name: squid
+    - name: snmpd
+    - name: ypserv
+    - name: rexec.socket
+    - name: rlogin.socket
+    - name: rsh.socket
+    - name: debug-shell.service
+
+# =============================================================================
+# KERNEL PARAMETERS (sysctl)
+# =============================================================================
+kernel_parameters:
+  # --- Network: IP forwarding and redirects ---
+  net.ipv4.ip_forward:
+    value: "0"
+  net.ipv4.conf.all.send_redirects:
+    value: "0"
+  net.ipv4.conf.default.send_redirects:
+    value: "0"
+  net.ipv4.conf.all.accept_redirects:
+    value: "0"
+  net.ipv4.conf.default.accept_redirects:
+    value: "0"
+  net.ipv6.conf.all.accept_redirects:
+    value: "0"
+  net.ipv6.conf.default.accept_redirects:
+    value: "0"
+  net.ipv4.conf.all.accept_source_route:
+    value: "0"
+  net.ipv4.conf.default.accept_source_route:
+    value: "0"
+  net.ipv6.conf.all.accept_source_route:
+    value: "0"
+  net.ipv6.conf.default.accept_source_route:
+    value: "0"
+  net.ipv4.conf.all.secure_redirects:
+    value: "0"
+
+  # --- Network: logging and protection ---
+  net.ipv4.conf.all.log_martians:
+    value: "1"
+  net.ipv4.conf.default.log_martians:
+    value: "1"
+  net.ipv4.tcp_syncookies:
+    value: "1"
+  net.ipv4.conf.all.rp_filter:
+    value: "1"
+  net.ipv4.conf.default.rp_filter:
+    value: "1"
+  net.ipv4.icmp_echo_ignore_broadcasts:
+    value: "1"
+  net.ipv4.icmp_ignore_bogus_error_responses:
+    value: "1"
+
+  # --- IPv6 ---
+  net.ipv6.conf.all.disable_ipv6:
+    value: "1"
+  net.ipv6.conf.default.disable_ipv6:
+    value: "1"
+  net.ipv6.conf.all.accept_ra:
+    value: "0"
+
+  # --- Kernel hardening ---
+  kernel.randomize_va_space:
+    value: "2"
+  fs.suid_dumpable:
+    value: "0"
+  kernel.dmesg_restrict:
+    value: "1"
+  kernel.yama.ptrace_scope:
+    value: "1"
+  kernel.kptr_restrict:
+    value: "2"
+  kernel.perf_event_paranoid:
+    value: "3"
+  kernel.unprivileged_bpf_disabled:
+    value: "1"
+  net.core.bpf_jit_harden:
+    value: "2"
+
+# =============================================================================
+# FILE PERMISSIONS
+# =============================================================================
+file_permissions:
+  # --- Authentication and identity files ---
+  - path: /etc/passwd
+    owner: root
+    group: root
+    mode: "0644"
+  - path: /etc/passwd-
+    owner: root
+    group: root
+    mode: "0600"
+  - path: /etc/shadow
+    owner: root
+    group: root
+    mode: "0000"
+  - path: /etc/shadow-
+    owner: root
+    group: root
+    mode: "0000"
+  - path: /etc/group
+    owner: root
+    group: root
+    mode: "0644"
+  - path: /etc/group-
+    owner: root
+    group: root
+    mode: "0600"
+  - path: /etc/gshadow
+    owner: root
+    group: root
+    mode: "0000"
+  - path: /etc/gshadow-
+    owner: root
+    group: root
+    mode: "0000"
+
+  # --- SSH ---
+  - path: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: "0600"
+  - path: /etc/ssh/ssh_host_rsa_key
+    owner: root
+    group: root
+    mode: "0600"
+  - path: /etc/ssh/ssh_host_ecdsa_key
+    owner: root
+    group: root
+    mode: "0600"
+  - path: /etc/ssh/ssh_host_ed25519_key
+    owner: root
+    group: root
+    mode: "0600"
+
+  # --- Privilege escalation ---
+  - path: /etc/sudoers
+    owner: root
+    group: root
+    mode: "0440"
+  - path: /etc/sudoers.d
+    owner: root
+    group: root
+    mode: "0750"
+
+  # --- Scheduling ---
+  - path: /etc/crontab
+    owner: root
+    group: root
+    mode: "0600"
+  - path: /etc/cron.d
+    owner: root
+    group: root
+    mode: "0700"
+  - path: /etc/cron.daily
+    owner: root
+    group: root
+    mode: "0700"
+  - path: /etc/cron.hourly
+    owner: root
+    group: root
+    mode: "0700"
+  - path: /etc/cron.weekly
+    owner: root
+    group: root
+    mode: "0700"
+  - path: /etc/cron.monthly
+    owner: root
+    group: root
+    mode: "0700"
+  - path: /etc/at.deny
+    owner: root
+    group: root
+    mode: "0600"
+
+  # --- Audit ---
+  - path: /etc/audit/auditd.conf
+    owner: root
+    group: root
+    mode: "0640"
+  - path: /etc/audit/audit.rules
+    owner: root
+    group: root
+    mode: "0640"
+
+  # --- SELinux ---
+  - path: /etc/selinux/config
+    owner: root
+    group: root
+    mode: "0644"
+
+  # --- System ---
+  - path: /etc/security/limits.conf
+    owner: root
+    group: root
+    mode: "0644"
+  - path: /etc/sysctl.conf
+    owner: root
+    group: root
+    mode: "0600"
+  - path: /etc/login.defs
+    owner: root
+    group: root
+    mode: "0644"
+  - path: /boot/grub2/grub.cfg
+    owner: root
+    group: root
+    mode: "0600"
+  - path: /etc/rsyslog.conf
+    owner: root
+    group: root
+    mode: "0640"
+
+# =============================================================================
+# SELINUX
+# =============================================================================
+selinux:
+  mode: enforcing
+  policy: targeted
+
+# =============================================================================
+# FILESYSTEM MOUNT OPTIONS
+# =============================================================================
+filesystem_mounts:
+  /tmp:
+    options:
+      - nodev
+      - nosuid
+      - noexec
+  /var/tmp:
+    options:
+      - nodev
+      - nosuid
+      - noexec
+  /dev/shm:
+    options:
+      - nodev
+      - nosuid
+      - noexec
+  /home:
+    options:
+      - nodev
+      - nosuid
+  /var/log:
+    options:
+      - nodev
+      - nosuid
+      - noexec
+  /var/log/audit:
+    options:
+      - nodev
+      - nosuid
+      - noexec
+  /boot:
+    options:
+      - nodev
+      - nosuid
+      - noexec
+  /boot/efi:
+    options:
+      - nodev
+      - nosuid
+      - noexec
+
+# =============================================================================
+# SSH HARDENING
+# =============================================================================
+# Expected sshd_config directives (compared against running config)
+ssh_config:
+  settings:
+    Protocol: "2"
+    PermitRootLogin: "no"
+    PasswordAuthentication: "no"
+    PermitEmptyPasswords: "no"
+    X11Forwarding: "no"
+    MaxAuthTries: "4"
+    MaxSessions: "10"
+    ClientAliveInterval: "300"
+    ClientAliveCountMax: "3"
+    LoginGraceTime: "60"
+    AllowTcpForwarding: "no"
+    AllowAgentForwarding: "no"
+    PermitUserEnvironment: "no"
+    Banner: "/etc/issue.net"
+    UsePAM: "yes"
+    LogLevel: "VERBOSE"
+    Ciphers: "aes256-gcm@openssh.com,chacha20-poly1305@openssh.com,aes256-ctr"
+    MACs: "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com"
+    KexAlgorithms: "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256"
+
+# =============================================================================
+# PAM CONFIGURATION
+# =============================================================================
+pam:
+  password_quality:
+    minlen: 14
+    dcredit: -1
+    ucredit: -1
+    ocredit: -1
+    lcredit: -1
+    minclass: 4
+    maxrepeat: 3
+    maxclassrepeat: 4
+    difok: 8
+  password_history:
+    remember: 24
+  account_lockout:
+    deny: 5
+    unlock_time: 900
+    fail_interval: 900
+
+# =============================================================================
+# LOGIN AND PASSWORD POLICY
+# =============================================================================
+login_defs:
+  settings:
+    PASS_MAX_DAYS: 90
+    PASS_MIN_DAYS: 1
+    PASS_MIN_LEN: 14
+    PASS_WARN_AGE: 14
+    LOGIN_RETRIES: 5
+    LOGIN_TIMEOUT: 60
+    UMASK: "027"
+    CREATE_HOME: "yes"
+    ENCRYPT_METHOD: "SHA512"
+    SHA_CRYPT_MIN_ROUNDS: 5000
+    LOG_OK_LOGINS: "yes"
+
+# =============================================================================
+# LOGIN BANNERS
+# =============================================================================
+banners:
+  files:
+    - path: /etc/issue
+      content_pattern: "Authorised users only"
+    - path: /etc/issue.net
+      content_pattern: "Authorised users only"
+    - path: /etc/motd
+      content_pattern: "This system is monitored"
+
+# =============================================================================
+# CRON AND AT ACCESS CONTROL
+# =============================================================================
+cron_access:
+  cron_allow_exists: true
+  cron_allow_owner: root
+  cron_allow_group: root
+  cron_allow_mode: "0600"
+  at_allow_exists: true
+  at_allow_owner: root
+  at_allow_group: root
+  at_allow_mode: "0600"
+  cron_deny_absent: true
+  at_deny_absent: true
+
+# =============================================================================
+# AUDIT RULES
+# =============================================================================
+# Verifies that critical audit rules are loaded (not the full auditd config)
+audit_rules:
+  required_watches:
+    - path: /etc/passwd
+      permissions: wa
+    - path: /etc/shadow
+      permissions: wa
+    - path: /etc/group
+      permissions: wa
+    - path: /etc/gshadow
+      permissions: wa
+    - path: /etc/sudoers
+      permissions: wa
+    - path: /etc/sudoers.d
+      permissions: wa
+    - path: /var/log/lastlog
+      permissions: wa
+    - path: /var/run/faillock
+      permissions: wa
+    - path: /etc/selinux
+      permissions: wa
+    - path: /etc/sysctl.conf
+      permissions: wa
+    - path: /etc/ssh/sshd_config
+      permissions: wa
+    - path: /etc/audit/auditd.conf
+      permissions: wa
+    - path: /etc/audit/audit.rules
+      permissions: wa
+    - path: /etc/pam.d
+      permissions: wa
+    - path: /etc/login.defs
+      permissions: wa
+    - path: /etc/securetty
+      permissions: wa
+    - path: /etc/crontab
+      permissions: wa
+    - path: /etc/cron.d
+      permissions: wa
+  required_syscalls:
+    - name: execve
+      description: "Command execution"
+    - name: open
+      description: "File open (32-bit)"
+    - name: openat
+      description: "File open"
+    - name: creat
+      description: "File create"
+    - name: truncate
+      description: "File truncate"
+    - name: ftruncate
+      description: "File truncate (fd)"
+    - name: chmod
+      description: "Permission change"
+    - name: fchmod
+      description: "Permission change (fd)"
+    - name: chown
+      description: "Ownership change"
+    - name: fchown
+      description: "Ownership change (fd)"
+    - name: setxattr
+      description: "Extended attribute set"
+    - name: lsetxattr
+      description: "Extended attribute set (link)"
+    - name: removexattr
+      description: "Extended attribute remove"
+    - name: mount
+      description: "Filesystem mount"
+    - name: delete_module
+      description: "Kernel module unload"
+    - name: init_module
+      description: "Kernel module load"
+    - name: finit_module
+      description: "Kernel module load (fd)"
+
+# =============================================================================
+# AUDITD DAEMON CONFIGURATION
+# =============================================================================
+# Controls auditd.conf settings — the daemon configuration (separate from rules)
+auditd_config:
+  max_log_file: 100
+  max_log_file_action: rotate
+  num_logs: 5
+  space_left: 75
+  space_left_action: email
+  admin_space_left: 50
+  admin_space_left_action: halt
+  disk_full_action: halt
+  disk_error_action: halt
+  log_format: ENRICHED
+  flush: incremental_async
+  freq: 50
+
+# =============================================================================
+# FIREWALL RULES (nftables)
+# =============================================================================
+firewall:
+  backend: nftables
+  default_policy: drop
+  allowed_inbound:
+    - port: 22
+      protocol: tcp
+      source: "{{ mgmt_subnet }}"
+      description: "SSH from management subnet"
+    - port: 9100
+      protocol: tcp
+      source: "{{ monitoring_subnet }}"
+      description: "Prometheus node_exporter"
+  allowed_outbound:
+    - port: 443
+      protocol: tcp
+      destination: "{{ satellite_servers[region][platform] }}"
+      description: "Satellite registration and content"
+    - port: 8443
+      protocol: tcp
+      destination: "{{ illumio_pce[region] }}"
+      description: "Illumio PCE communication"
+    - port: 443
+      protocol: tcp
+      destination: "{{ qualys_server[region] }}"
+      description: "Qualys Cloud Agent"
+    - port: 443
+      protocol: tcp
+      destination: "{{ dynatrace_server[region] }}"
+      description: "Dynatrace OneAgent"
+    - port: 443
+      protocol: tcp
+      destination: "{{ bigfix_server[region] }}"
+      description: "BigFix relay"
+    - port: 443
+      protocol: tcp
+      destination: "{{ snow_discovery_server[region] }}"
+      description: "SNOW Discovery"
+    - port: 514
+      protocol: tcp
+      destination: "{{ syslog_server[region] }}"
+      description: "Syslog forwarding (TLS)"
+
+# =============================================================================
+# AGENT CONFIGURATIONS
+# =============================================================================
+# Validates agent health beyond just package/service presence
+agents:
+  qualys:
+    package: qualys-cloud-agent
+    service: qualys-cloud-agent
+    config_file: /etc/qualys/cloud-agent/Config/qualys-cloud-agent.conf
+    validation_command: /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh GetStatus
+    expected_status_pattern: "Agent is connected"
+
+  dynatrace:
+    package: oneagent
+    service: oneagent
+    config_file: /var/lib/dynatrace/oneagent/agent/config/hostautotag.conf
+    validation_command: /opt/dynatrace/oneagent/agent/tools/oneagentctl --get-host-group
+    expected_host_group: "{{ dynatrace_host_group }}"
+
+  illumio:
+    package: illumio-ven
+    service: illumio-ven
+    validation_command: /opt/illumio_ven/illumio-ven-ctl status
+    expected_status_pattern: "ILLUMINATED|IDLE"
+
+  defender:
+    package: mdatp
+    service: mdatp
+    validation_command: mdatp health --field healthy
+    expected_status_pattern: "true"
+
+  bigfix:
+    package: BESAgent
+    service: besclient
+    config_file: /etc/opt/BESClient/besclient.config
+    validation_command: /opt/BESClient/bin/BESClient -V
+
+  ilmt:
+    package: ilmt-scanner
+    service: ilmt-scanner
+    config_file: /var/opt/BESClient/LMT/SCAN/scanner.properties
+
+  snow_discovery:
+    package: snow-discovery-agent
+    service: snow-discovery-agent
+    config_file: /opt/snow/discovery/snow-discovery-agent.conf
+
+# =============================================================================
+# RSYSLOG FORWARDING
+# =============================================================================
+rsyslog:
+  remote_server: "{{ syslog_server[region] }}"
+  remote_port: 514
+  protocol: tcp
+  tls_enabled: true
+  tls_ca_cert: /etc/pki/tls/certs/qbe-ca-bundle.pem
+  facilities:
+    - "auth.*"
+    - "authpriv.*"
+    - "daemon.*"
+    - "kern.*"
+    - "*.emerg"
+
+# =============================================================================
+# NTP / CHRONY
+# =============================================================================
+chrony:
+  ntp_servers: "{{ ntp_servers[region] }}"
+  makestep_threshold: 1.0
+  makestep_limit: 3
+  rtcsync: true
+  allow: []
+  deny:
+    - "all"
+
+# =============================================================================
+# DNS RESOLVER
+# =============================================================================
+dns:
+  nameservers: "{{ dns_servers[region] }}"
+  search_domains: "{{ dns_search_domains[region] }}"
+  options:
+    - "timeout:2"
+    - "attempts:3"
+    - "rotate"
+
+# =============================================================================
+# AUTO-REMEDIATION DEFAULTS
+# =============================================================================
+# Controlled per-environment via overrides; base default is false (safe)
+drift_auto_remediate: false
+drift_remediate_max_severity: moderate
+drift_remediate_exclude_categories:
+  - aide
+
+# =============================================================================
+# IMAGE BUILD CONFIGURATION
+# =============================================================================
+# Settings consumed ONLY by generate_blueprint_toml.yml when creating the
+# Image Builder blueprint TOML. These are Day 0 image-build concerns that
+# do not participate in Day 2 drift detection.
+#
+# - common_packages: OS packages needed in the image but not drift-checked
+#   (they are foundational and cannot be removed without breaking the VM)
+# - users: service accounts baked into the golden image
+# - partitions: filesystem layout with sizes (baseline.filesystem_mounts
+#   tracks mount options only; this section adds sizes for image creation)
+# - timezone, locale, kernel_append: image defaults
+# =============================================================================
+image_config:
+  common_packages:
+    - python3
+    - sudo
+    - selinux-policy-targeted
+    - scap-security-guide
+
+  users:
+    - name: ansibleadm
+      description: "Ansible Automation Service Account"
+      groups:
+        - wheel
+      uid: 2000
+      gid: 2000
+      ssh_key: "ssh-rsa CHANGEME ansibleadm@qbe.com"
+    - name: hsekeep
+      description: "Housekeeping Service Account"
+      uid: 2001
+      gid: 2001
+      ssh_key: "ssh-rsa CHANGEME hsekeep@qbe.com"
+
+  timezone: "UTC"
+  locale:
+    languages:
+      - "en_US.UTF-8"
+    keyboard: "us"
+
+  kernel_append: "audit=1 audit_backlog_limit=8192 crashkernel=auto"
+
+  partitions:
+    - mountpoint: /
+      size: 10737418240
+      type: xfs
+    - mountpoint: /boot
+      size: 1073741824
+      type: xfs
+    - mountpoint: /boot/efi
+      size: 629145600
+      type: vfat
+    - mountpoint: /home
+      size: 2147483648
+      type: xfs
+    - mountpoint: /tmp
+      size: 2147483648
+      type: xfs
+    - mountpoint: /var
+      size: 10737418240
+      type: xfs
+    - mountpoint: /var/log
+      size: 5368709120
+      type: xfs
+    - mountpoint: /var/log/audit
+      size: 3221225472
+      type: xfs
+    - mountpoint: /var/tmp
+      size: 2147483648
+      type: xfs

@@ -1,10 +1,159 @@
+# playbooks/d2_cis_scan.yml
 ---
-- hosts: all
+# --- Play 1: Scan all hosts ---
+- name: Day 2 — CIS Compliance Scan
+  hosts: "{{ target_hosts | default('rhel10_all') }}"
+  become: true
+  serial: "{{ scan_serial | default('20%') }}"
+  vars:
+    _cis_scan_profile: "{{ cis_profile.base_profile }}"
+    _cis_scan_content: "{{ cis_profile.content_path }}"
+    _cis_scan_tailoring: "{{ cis_profile.tailoring_path }}"
+    cis_report_dir: /var/log/openscap
   tasks:
-  - name: Create gpg key directory for importing keys
-    file:
-      path: "{{ item }}"
-      state: directory
-      mode: 0755
-    with_items:
-      - /etc/pki/rpm-gpg/import
+    - name: Deploy latest tailoring file from Git
+      ansible.builtin.copy:
+        src: files/qbe_cis_tailoring_rhel10.xml
+        dest: "{{ _cis_scan_tailoring }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Ensure OpenSCAP scanner is installed
+      ansible.builtin.dnf:
+        name:
+          - openscap-scanner
+          - scap-security-guide
+        state: present
+
+    - name: Create report directory
+      ansible.builtin.file:
+        path: "{{ cis_report_dir }}"
+        state: directory
+        mode: "0750"
+        owner: root
+        group: root
+
+    - name: Run CIS Level 1 compliance scan
+      ansible.builtin.command:
+        cmd: >-
+          oscap xccdf eval
+          --profile {{ _cis_scan_profile }}
+          --tailoring-file {{ _cis_scan_tailoring }}
+          --results {{ cis_report_dir }}/cis-results-{{ ansible_date_time.date }}.xml
+          --report {{ cis_report_dir }}/cis-report-{{ ansible_date_time.date }}.html
+          {{ _cis_scan_content }}
+      register: cis_scan_result
+      changed_when: false
+      failed_when: cis_scan_result.rc not in [0, 2]
+
+    - name: Extract compliance score
+      ansible.builtin.shell:
+        cmd: >-
+          oscap xccdf eval --profile {{ _cis_scan_profile }}
+          --tailoring-file {{ _cis_scan_tailoring }}
+          {{ _cis_scan_content }} 2>&1 | grep -oP 'Score:\s+\K[\d.]+'
+      register: cis_score
+      changed_when: false
+      failed_when: false
+
+    - name: Set per-host compliance facts
+      ansible.builtin.set_fact:
+        cis_host_result:
+          hostname: "{{ inventory_hostname }}"
+          region: "{{ region }}"
+          environment: "{{ environment }}"
+          score: "{{ cis_score.stdout | default('0') }}"
+          passed: "{{ cis_scan_result.rc == 0 }}"
+          scan_date: "{{ ansible_date_time.iso8601 }}"
+          report_path: "{{ cis_report_dir }}/cis-report-{{ ansible_date_time.date }}.html"
+
+    - name: Upload scan results to Satellite
+      ansible.builtin.command:
+        cmd: >-
+          foreman-proxy-upload
+          --report {{ cis_report_dir }}/cis-results-{{ ansible_date_time.date }}.xml
+          --host {{ inventory_hostname }}
+      changed_when: false
+      failed_when: false
+
+# --- Play 2: Consolidated reporting ---
+- name: Day 2 — CIS Compliance Consolidated Reporting
+  hosts: localhost
+  gather_facts: true
+  connection: local
+  vars:
+    scan_targets: "{{ groups[target_hosts | default('rhel10_all')] }}"
+    all_results: >-
+      {{ scan_targets | map('extract', hostvars, 'cis_host_result') | list }}
+    failed_hosts: >-
+      {{ all_results | rejectattr('passed', 'equalto', true) | list }}
+    passed_hosts: >-
+      {{ all_results | selectattr('passed', 'equalto', true) | list }}
+    total_scanned: "{{ all_results | length }}"
+    total_failed: "{{ failed_hosts | length }}"
+    total_passed: "{{ passed_hosts | length }}"
+    avg_score: >-
+      {{ all_results | map(attribute='score') | map('float') | sum / (total_scanned | int) | round(1) }}
+  tasks:
+    - name: Create consolidated ServiceNow ticket for CIS failures
+      when: total_failed | int > 0
+      servicenow.itsm.incident:
+        state: new
+        short_description: >-
+          CIS compliance failures — {{ total_failed }}/{{ total_scanned }}
+          hosts non-compliant — {{ ansible_date_time.date }}
+        description: |
+          CIS Level 1 Compliance Scan Summary
+          =====================================
+          Scan Date: {{ ansible_date_time.iso8601 }}
+          Total Hosts Scanned: {{ total_scanned }}
+          Hosts Passed: {{ total_passed }}
+          Hosts Failed: {{ total_failed }}
+          Fleet Average Score: {{ avg_score }}%
+
+          Non-Compliant Hosts:
+          {% for host in failed_hosts %}
+          - {{ host.hostname }} ({{ host.region }}/{{ host.environment }}) — Score: {{ host.score }}%
+            Report: {{ host.report_path }}
+          {% endfor %}
+
+          Manual review and remediation required.
+        impact: medium
+        urgency: medium
+        assignment_group: "Linux-Operations"
+        category: Compliance
+        subcategory: CIS Benchmark
+      register: snow_cis_ticket
+      no_log: true
+
+    - name: Send consolidated CIS compliance summary email
+      ansible.builtin.include_role:
+        name: qbe.common.ops_notify
+      vars:
+        ops_notify_subject: >-
+          CIS Compliance Scan — {{ total_failed }}/{{ total_scanned }}
+          non-compliant — avg {{ avg_score }}% — {{ ansible_date_time.date }}
+        ops_notify_body: |
+          CIS Level 1 Compliance Scan Summary
+          =====================================
+          Scan Date: {{ ansible_date_time.iso8601 }}
+          Total Hosts Scanned: {{ total_scanned }}
+          Hosts Passed: {{ total_passed }}
+          Hosts Failed: {{ total_failed }}
+          Fleet Average Score: {{ avg_score }}%
+          {% if snow_cis_ticket is defined and snow_cis_ticket is not skipped %}
+          ServiceNow Ticket: {{ snow_cis_ticket.record.number }}
+          {% endif %}
+
+          {% if total_failed | int > 0 %}
+          Non-Compliant Hosts:
+          {% for host in failed_hosts %}
+            - {{ host.hostname }} ({{ host.region }}/{{ host.environment }}) — {{ host.score }}%
+          {% endfor %}
+          {% endif %}
+
+          {% if total_passed | int > 0 %}
+          Compliant Hosts: {{ passed_hosts | map(attribute='hostname') | join(', ') }}
+          {% endif %}
+        ops_notify_recipients: "{{ ops_email.values() | flatten | unique | list }}"

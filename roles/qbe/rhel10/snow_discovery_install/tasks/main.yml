@@ -1,0 +1,25 @@
+# roles/snow_discovery_install/tasks/main.yml
+---
+- name: Install SNOW Discovery agent
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ agents.snow_discovery.package }}"
+    enablerepo: "{{ snow_discovery_repo }}"
+    state: present
+
+- name: Configure SNOW Discovery
+  become: true
+  ansible.builtin.template:
+    src: snow-discovery.conf.j2
+    dest: "{{ agents.snow_discovery.config_file }}"
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Restart snow-discovery
+
+- name: Ensure SNOW Discovery is running
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ agents.snow_discovery.service }}"
+    state: started
+    enabled: true

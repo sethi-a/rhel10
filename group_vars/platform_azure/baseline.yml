@@ -1,0 +1,34 @@
+# group_vars/platform_azure/baseline.yml
+# =============================================================================
+# Azure Platform-Specific Baseline Overrides
+# =============================================================================
+# Uses separate variable names (packages_platform_required,
+# services_platform_enabled) so platform-specific lists don't replace
+# the base lists from group_vars/all/baseline.yml. The baseline_check
+# role concatenates these with the base lists at runtime.
+# A host must be a member of the platform_azure inventory group.
+# =============================================================================
+---
+baseline_description: "RHEL 10 Azure platform overlay"
+
+# --- Azure-specific packages (separate variable — concatenated by baseline_check) ---
+packages_platform_required:
+  - name: WALinuxAgent
+    version: null
+  - name: cloud-init
+    version: null
+  - name: azure-cli
+    version: null
+  - name: azcmagent
+    version: null
+
+# --- Azure-specific services (separate variable — concatenated by baseline_check) ---
+services_platform_enabled:
+  - name: waagent
+  - name: cloud-init
+  - name: azcmagent
+
+# --- Azure-specific kernel parameters (merged into base by hash_behaviour=merge) ---
+kernel_parameters:
+  net.ipv4.conf.all.rp_filter:
+    value: "2"

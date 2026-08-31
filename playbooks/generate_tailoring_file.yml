@@ -1,10 +1,48 @@
+# playbooks/generate_tailoring_xml.yml
+# Generates the OpenSCAP XCCDF tailoring file from the baseline YAML.
+# Run: ansible-playbook playbooks/generate_tailoring_xml.yml
+# Output: files/qbe_cis_tailoring_rhel10.xml (single file, all environments)
 ---
-- hosts: all
+- name: "Generate CIS Tailoring XML from Baseline YAML"
+  hosts: localhost
+  gather_facts: true
+  connection: local
+  vars:
+    cis_profile_file: "{{ playbook_dir }}/../group_vars/all/cis_profile.yml"
+    output_file: "{{ playbook_dir }}/../files/qbe_cis_tailoring_rhel10.xml"
+
   tasks:
-  - name: Create gpg key directory for importing keys
-    file:
-      path: "{{ item }}"
-      state: directory
-      mode: 0755
-    with_items:
-      - /etc/pki/rpm-gpg/import
+    - name: Load CIS profile YAML
+      ansible.builtin.include_vars:
+        file: "{{ cis_profile_file }}"
+
+    - name: Validate CIS profile section exists
+      ansible.builtin.assert:
+        that:
+          - cis_profile is defined
+          - cis_profile.base_profile is defined
+          - cis_profile.tailoring_id is defined
+        fail_msg: "cis_profile.yml must contain a cis_profile section"
+
+    - name: Generate tailoring XML
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/cis_tailoring.xml.j2"
+        dest: "{{ output_file }}"
+        mode: "0644"
+
+    - name: Validate generated tailoring file
+      ansible.builtin.command:
+        cmd: >-
+          oscap info {{ output_file }}
+      register: oscap_validate
+      changed_when: false
+      failed_when: oscap_validate.rc != 0
+
+    - name: Report generation summary
+      ansible.builtin.debug:
+        msg: |
+          Tailoring XML generated successfully:
+            Output: {{ output_file }}
+            Profile: {{ cis_profile.base_profile }}
+            Rules disabled: {{ cis_profile.disabled_rules | default([]) | length }}
+            Rules modified: {{ cis_profile.modified_rules | default([]) | length }}

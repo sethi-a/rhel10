@@ -1,0 +1,116 @@
+# group_vars/all/cis_profile.yml
+# =============================================================================
+# CIS Compliance Profile (Single Source of Truth)
+# =============================================================================
+# Defines the CIS Level 1 compliance posture in YAML. The generation playbook
+# (playbooks/generate_tailoring_xml.yml) converts this into the XCCDF
+# tailoring XML that OpenSCAP requires. Developers edit this YAML instead of
+# hand-editing the XML file.
+#
+# The tailoring XML (qbe-cis-l1-tailoring.xml) is a GENERATED ARTEFACT.
+#
+# Consumed by:
+#   - Day 0: CI pipeline generates tailoring XML from this file
+#   - Day 1: cis_compliance role runs scan using the tailoring XML
+#   - Day 2: compliance scan job validates ongoing adherence
+#
+# Maintenance:
+#   - All changes require a Git pull request and peer review.
+#   - Disabled rules require a justification (reason field).
+# =============================================================================
+---
+cis_profile:
+  base_profile: xccdf_org.ssgproject.content_profile_cis_server_l1
+  content_path: /usr/share/xml/scap/ssg/content/ssg-rhel10-ds.xml
+  tailoring_path: /etc/openscap/qbe-cis-l1-tailoring.xml
+  tailoring_id: "xccdf_qbe.com_tailoring_cis-l1-rhel10"
+  benchmark_id: "xccdf_org.ssgproject.content_benchmark_RHEL-10"
+  minimum_score: 95.0
+
+  # --- Rules disabled with justification ---
+  disabled_rules:
+    # Services not applicable to RHEL 10 golden image
+    - rule_id: xccdf_org.ssgproject.content_rule_service_autofs_disabled
+      reason: "AutoFS not installed in golden image; rule not applicable"
+
+    # Mount options handled by baseline.filesystem_mounts (avoid double-checking)
+    - rule_id: xccdf_org.ssgproject.content_rule_mount_option_dev_shm_nodev
+      reason: "Handled by filesystem_mounts section in baseline"
+    - rule_id: xccdf_org.ssgproject.content_rule_mount_option_dev_shm_nosuid
+      reason: "Handled by filesystem_mounts section in baseline"
+    - rule_id: xccdf_org.ssgproject.content_rule_mount_option_dev_shm_noexec
+      reason: "Handled by filesystem_mounts section in baseline"
+
+    # Packages not available in RHEL 10 default repos
+    - rule_id: xccdf_org.ssgproject.content_rule_package_talk_removed
+      reason: "talk package not in RHEL 10 default repos; rule not applicable"
+    - rule_id: xccdf_org.ssgproject.content_rule_package_talk-server_removed
+      reason: "talk-server not in RHEL 10 default repos; rule not applicable"
+    - rule_id: xccdf_org.ssgproject.content_rule_package_rsh_removed
+      reason: "rsh not in RHEL 10 default repos; rule not applicable"
+
+    # Legacy services not available in RHEL 10
+    - rule_id: xccdf_org.ssgproject.content_rule_service_rlogin_disabled
+      reason: "rlogin not available in RHEL 10; rule not applicable"
+    - rule_id: xccdf_org.ssgproject.content_rule_service_rsh_disabled
+      reason: "rsh not available in RHEL 10; rule not applicable"
+
+    # NIS not used
+    - rule_id: xccdf_org.ssgproject.content_rule_package_ypbind_removed
+      reason: "NIS not used; ypbind not installed in golden image"
+    - rule_id: xccdf_org.ssgproject.content_rule_package_ypserv_removed
+      reason: "NIS not used; ypserv not installed in golden image"
+
+    # Physical access rules not applicable to virtualised infrastructure
+    - rule_id: xccdf_org.ssgproject.content_rule_grub2_password
+      reason: "GRUB password not applicable — VMs accessed via console/SSH only"
+    - rule_id: xccdf_org.ssgproject.content_rule_require_singleuser_auth
+      reason: "Single-user mode access controlled via hypervisor console"
+    - rule_id: xccdf_org.ssgproject.content_rule_disable_interactive_boot
+      reason: "Interactive boot not applicable to cloud/virtualised VMs"
+
+  # --- Rules with modified values ---
+  modified_rules:
+    # Password policy
+    - rule_id: xccdf_org.ssgproject.content_rule_accounts_password_minlen_login_defs
+      value_id: xccdf_org.ssgproject.content_value_var_accounts_password_minlen_login_defs
+      value: "14"
+      reason: "QBE policy: 14-char minimum password length"
+    - rule_id: xccdf_org.ssgproject.content_rule_accounts_maximum_age_login_defs
+      value_id: xccdf_org.ssgproject.content_value_var_accounts_maximum_age_login_defs
+      value: "90"
+      reason: "QBE policy: 90-day password expiry"
+    - rule_id: xccdf_org.ssgproject.content_rule_accounts_minimum_age_login_defs
+      value_id: xccdf_org.ssgproject.content_value_var_accounts_minimum_age_login_defs
+      value: "1"
+      reason: "QBE policy: minimum 1 day between password changes"
+    - rule_id: xccdf_org.ssgproject.content_rule_accounts_password_warn_age_login_defs
+      value_id: xccdf_org.ssgproject.content_value_var_accounts_password_warn_age_login_defs
+      value: "14"
+      reason: "QBE policy: 14-day password expiry warning"
+
+    # Account lockout
+    - rule_id: xccdf_org.ssgproject.content_rule_accounts_passwords_pam_faillock_deny
+      value_id: xccdf_org.ssgproject.content_value_var_accounts_passwords_pam_faillock_deny
+      value: "5"
+      reason: "QBE policy: lock after 5 failed attempts"
+    - rule_id: xccdf_org.ssgproject.content_rule_accounts_passwords_pam_faillock_unlock_time
+      value_id: xccdf_org.ssgproject.content_value_var_accounts_passwords_pam_faillock_unlock_time
+      value: "900"
+      reason: "QBE policy: 15-minute account lockout"
+
+    # SSH settings
+    - rule_id: xccdf_org.ssgproject.content_rule_sshd_set_idle_timeout
+      value_id: xccdf_org.ssgproject.content_value_sshd_idle_timeout_value
+      value: "300"
+      reason: "QBE policy: 5-minute SSH idle timeout"
+    - rule_id: xccdf_org.ssgproject.content_rule_sshd_max_auth_tries
+      value_id: xccdf_org.ssgproject.content_value_sshd_max_auth_tries_value
+      value: "4"
+      reason: "QBE policy: maximum 4 SSH auth attempts"
+
+    # Shell timeout
+    - rule_id: xccdf_org.ssgproject.content_rule_var_accounts_tmout
+      value_id: xccdf_org.ssgproject.content_value_var_accounts_tmout
+      value: "300"
+      reason: "QBE policy: 5-minute shell timeout"

@@ -1,0 +1,59 @@
+# group_vars/all/remediation.yml
+# =============================================================================
+# Drift Remediation Configuration
+# =============================================================================
+# Maps baseline_check categories to the Day 1 roles that can fix them.
+# Used by d2_drift_detect.yml to build role_drift and by
+# d2_drift_remediate.yml to determine which roles to re-run.
+#
+# All 18 baseline categories have a mapped remediation role.
+#
+# To add a new baseline category:
+#   1. Add the check file in roles/day2/baseline_check/tasks/
+#   2. Add the category-to-role mapping here
+#   3. Add the remediation task in d2_drift_remediate.yml
+#
+# To change which role remediates a category:
+#   Edit the mapping here — no playbook changes needed.
+# =============================================================================
+---
+
+# --- Category-to-Role Mapping ---
+# Each baseline_check category maps to a Day 1 role name (FQCN: qbe.rhel.<name>).
+# Multiple categories can map to the same role (e.g. os_hardening covers 7).
+#
+# agents is set to null because it is a container category — it has 7 sub-items
+# (qualys, illumio, defender, etc.), each with its own install role. The detect
+# playbook skips the null lookup and instead resolves individual drifted agents
+# via agent_role_map below. This avoids re-running all 7 agent installs when
+# only one agent has drifted.
+category_role_map:
+  packages: "packages_baseline"
+  services: "services_baseline"
+  kernel_parameters: "os_hardening"
+  file_permissions: "os_hardening"
+  selinux: "os_hardening"
+  mounts: "mounts_enforce"
+  firewall: "os_hardening"
+  ssh_config: "os_hardening"
+  pam: "auth"
+  login_defs: "auth"
+  banners: "os_hardening"
+  cron_access: "os_hardening"
+  audit_rules: "auditd"
+  auditd_config: "auditd"
+  rsyslog: "rsyslog_configure"
+  chrony: "timesync"
+  dns: "dns_configure"
+  agents: null
+
+# --- Agent-to-Role Mapping ---
+# Each agent in the agents category maps to its own install role.
+agent_role_map:
+  qualys: "qualys_install"
+  illumio: "illumio_install"
+  defender: "defender_install"
+  dynatrace: "dynatrace_install"
+  bigfix: "bigfix_install"
+  ilmt: "ilmt_install"
+  snow_discovery: "snow_discovery_install"

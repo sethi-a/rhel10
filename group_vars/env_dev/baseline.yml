@@ -1,0 +1,48 @@
+# group_vars/env_dev/baseline.yml
+# =============================================================================
+# Development-Specific Overrides (changed values only)
+# =============================================================================
+# With hash_behaviour=merge in ansible.cfg, Ansible recursively merges these
+# into group_vars/all/baseline.yml. Only values that differ from base are here.
+# =============================================================================
+---
+baseline_description: "RHEL 10 Development baseline (permissive)"
+
+drift_auto_remediate: true
+
+# --- Allow container workloads ---
+kernel_parameters:
+  net.ipv4.ip_forward:
+    value: "1"
+
+# --- Relaxed SSH for development ---
+ssh_config:
+  settings:
+    PasswordAuthentication: "yes"
+    X11Forwarding: "yes"
+    MaxAuthTries: "6"
+    ClientAliveInterval: "600"
+
+# --- Relaxed password policy ---
+login_defs:
+  settings:
+    PASS_MAX_DAYS: 180
+    PASS_MIN_DAYS: 0
+    UMASK: "022"
+
+# --- Relaxed PAM lockout ---
+pam:
+  account_lockout:
+    deny: 10
+    unlock_time: 300
+    fail_interval: 300
+
+# --- Lower agent severity ---
+agents:
+  qualys:
+  illumio:
+  defender:
+
+# --- CIS: lower threshold ---
+cis_profile:
+  minimum_score: 90.0
