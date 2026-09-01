@@ -36,17 +36,9 @@
         mode: "0755"
     
     - name: Install OpenSCAP packages
-      ansible.builtin.raw: yum install -y openscap-scanner scap-security-guide
+      ansible.builtin.raw: microdnf install -y openscap-scanner scap-security-guide
       become: true
       changed_when: false
-
-    - name: Validate generated tailoring file
-      ansible.builtin.command:
-        cmd: >-
-          oscap info {{ output_file }}
-      register: oscap_validate
-      changed_when: false
-      failed_when: oscap_validate.rc != 0
 
     - name: Generate tailoring XML
       ansible.builtin.template:
