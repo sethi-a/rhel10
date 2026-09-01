@@ -35,10 +35,14 @@
         state: directory
         mode: "0755"
     
+    - name: Install python3-dnf (bootstrap)
+      ansible.builtin.raw: dnf install -y python3-dnf
+      become: true
+      changed_when: false
+
     - name: Ensure OpenSCAP is installed
       ansible.builtin.dnf:
         name:
-          - python3-dnf
           - openscap-scanner
           - scap-security-guide
         state: present
