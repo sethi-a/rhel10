@@ -38,9 +38,9 @@
     - name: Ensure OpenSCAP is installed
       ansible.builtin.dnf:
         name:
+          - python3-dnf
           - openscap-scanner
           - scap-security-guide
-          - python3-dnf
         state: present
       become: true
 
