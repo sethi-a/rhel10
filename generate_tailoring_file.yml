@@ -53,7 +53,7 @@
     - name: Set stats for AAP artifacts
       ansible.builtin.set_stats:
         data:
-          tailoring_xml_path: "{{ output_file }}"
+          tailoring_xml_content: "{{ tailoring_content.content | b64decode }}"
           tailoring_xml_profile: "{{ cis_profile['base_profile'] }}"
           tailoring_xml_disabled_rules: "{{ cis_profile['disabled_rules'] | default([]) | length }}"
           tailoring_xml_modified_rules: "{{ cis_profile['modified_rules'] | default([]) | length }}"
