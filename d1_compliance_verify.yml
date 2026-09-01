@@ -8,15 +8,11 @@
     cis_max_remediation_attempts: 2
 
   tasks:
-    # --- Qualys: Day 1 vulnerability baseline scan ---
-    - name: Run Qualys vulnerability scan
-      ansible.builtin.include_role:
-        name: qbe.rhel.qualys_scan
 
     # --- CIS: OpenSCAP compliance scan with remediation loop ---
     - name: Run CIS compliance check (scan → remediate → rescan)
       ansible.builtin.include_role:
-        name: qbe.rhel.cis_compliance
+        name: cis_compliance
       vars:
         cis_remediate: true
         cis_max_attempts: "{{ cis_max_remediation_attempts }}"

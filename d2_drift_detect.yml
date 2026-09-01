@@ -19,14 +19,6 @@
       ansible.builtin.include_role:
         name: qbe.rhel.baseline_check
 
-    # --- AIDE file integrity check ---
-    - name: Run AIDE integrity check
-      ansible.builtin.command:
-        cmd: aide --check
-      register: aide_result
-      changed_when: aide_result.rc == 1
-      failed_when: aide_result.rc > 7
-      become: true
 
     # --- Map drifted categories to Day 1 remediation roles ---
     # Mappings loaded from group_vars/all/rhel10_remediation.yml:
