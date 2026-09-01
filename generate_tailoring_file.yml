@@ -41,6 +41,15 @@
         dest: "{{ output_file }}"
         mode: "0644"
 
+    - name: Read generated Tailoring file content
+      ansible.builtin.slurp:
+        src: "{{ output_file }}"
+      register: xml_content
+
+    - name: Display generated TOML
+      ansible.builtin.debug:
+        msg: "{{ (xml_content.content | b64decode).split('\n')  }}"
+
     - name: Report generation summary
       ansible.builtin.debug:
         msg: |
