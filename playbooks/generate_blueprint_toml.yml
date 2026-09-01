@@ -26,16 +26,16 @@
       ansible.builtin.assert:
         that:
           - packages is defined
-          - packages.required is defined
-          - packages.prohibited is defined
+          - packages['required'] is defined
+          - packages['prohibited'] is defined
           - filesystem_mounts is defined
           - image_config is defined
-          - image_config.partitions is defined
-          - image_config.users is defined
+          - image_config['partitions'] is defined
+          - image_config['users'] is defined
           - firewall is defined
           - agents is defined
           - cis_profile is defined
-          - cis_profile.base_profile is defined
+          - cis_profile['base_profile'] is defined
         fail_msg: "group_vars/all/baseline.yml must contain packages, filesystem_mounts, image_config, firewall, and agents sections; group_vars/all/cis_profile.yml must contain cis_profile"
 
     - name: Load platform override files
