@@ -35,18 +35,18 @@
         state: directory
         mode: "0755"
     
-    - name: Install python3-dnf (bootstrap)
-      ansible.builtin.raw: dnf install -y python3-dnf
+    - name: Install OpenSCAP packages
+      ansible.builtin.raw: yum install -y openscap-scanner scap-security-guide
       become: true
       changed_when: false
 
-    - name: Ensure OpenSCAP is installed
-      ansible.builtin.dnf:
-        name:
-          - openscap-scanner
-          - scap-security-guide
-        state: present
-      become: true
+    - name: Validate generated tailoring file
+      ansible.builtin.command:
+        cmd: >-
+          oscap info {{ output_file }}
+      register: oscap_validate
+      changed_when: false
+      failed_when: oscap_validate.rc != 0
 
     - name: Generate tailoring XML
       ansible.builtin.template:
