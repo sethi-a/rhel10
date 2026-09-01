@@ -50,6 +50,14 @@
       ansible.builtin.debug:
         msg: "{{ (xml_content.content | b64decode).split('\n')  }}"
 
+    - name: Copy generated XML to AAP artifacts
+      ansible.builtin.copy:
+        src: "{{ output_file }}"
+        dest: "/runner/artifacts/qbe_cis_tailoring_rhel10.xml"
+        mode: "0644"
+      when: "'/runner' is directory"
+      failed_when: false
+
     - name: Report generation summary
       ansible.builtin.debug:
         msg: |

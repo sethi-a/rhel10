@@ -74,6 +74,14 @@
         platform_name: "{{ platform }}"
         platform_packages: "{{ packages_platform_required | default([]) }}"
 
+    - name: Copy generated TOML to AAP artifacts
+      ansible.builtin.copy:
+        src: "{{ output_dir }}/rhel10-{{ platform }}.toml"
+        dest: "/runner/artifacts/rhel10-{{ platform }}.toml"
+        mode: "0644"
+      when: "'/runner' is directory"
+      failed_when: false
+      
     - name: Read generated TOML content
       ansible.builtin.slurp:
         src: "{{ output_dir }}/rhel10-{{ platform }}.toml"
