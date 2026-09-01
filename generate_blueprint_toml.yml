@@ -81,7 +81,7 @@
 
     - name: Display generated TOML
       ansible.builtin.debug:
-        msg: "{{ (toml_content.content | b64decode).split('\n') }}"
+        msg: "{{ (toml_content.content | b64decode) }}"
 
     - name: Set stats for AAP artifacts
       ansible.builtin.set_stats:
