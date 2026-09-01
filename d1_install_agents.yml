@@ -10,5 +10,5 @@
     # --- Qualys (vulnerability scanning) ---
     - name: Install Qualys agent
       ansible.builtin.include_role:
-        name: qbe.rhel.qualys_install
+        name: qualys_install
 
