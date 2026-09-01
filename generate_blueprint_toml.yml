@@ -127,7 +127,7 @@
 
     - name: Copy blueprint TOML to target host
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/files/rhel10_{{ platform }}_blueprint.toml"
+        src: "{{ playbook_dir }}/blueprints/rhel10_{{ platform }}_blueprint.toml"
         dest: "/tmp/files/rhel10_{{ platform }}_blueprint.toml"
         mode: "0644"
 
