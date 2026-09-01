@@ -74,6 +74,15 @@
         platform_name: "{{ platform }}"
         platform_packages: "{{ packages_platform_required | default([]) }}"
 
+    - name: Read generated TOML content
+      ansible.builtin.slurp:
+        src: "{{ output_dir }}/rhel10-{{ platform }}.toml"
+      register: toml_content
+
+    - name: Display generated TOML
+      ansible.builtin.debug:
+        msg: "{{ toml_content.content | b64decode }}"
+
     - name: Report generation summary
       ansible.builtin.debug:
         msg: |
@@ -85,3 +94,4 @@
             - Prohibited packages: {{ packages['prohibited'] | length }}
             - Partitions: {{ image_config['partitions'] | length }}
             - CIS profile: {{ cis_profile['base_profile'] }}
+    
