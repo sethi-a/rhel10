@@ -17,9 +17,9 @@
   gather_facts: true
   connection: local
   vars:
-    vars_dir: "{{ playbook_dir }}/group_vars"
-    image_vars_dir: "{{ playbook_dir }}/vars"
-    output_dir: "{{ playbook_dir }}/blueprints"
+    vars_dir: "{{ playbook_dir }}/../group_vars"
+    image_vars_dir: "{{ playbook_dir }}/../vars"
+    output_dir: "{{ playbook_dir }}/../blueprints"
 
   tasks:
     - name: Validate platform is specified
@@ -33,17 +33,9 @@
       ansible.builtin.include_vars:
         file: "{{ image_vars_dir }}/rhel10_image_config.yml"
 
-    - name: Load baseline variables
-      ansible.builtin.include_vars:
-        file: "{{ vars_dir }}/all/rhel10_vm_baseline.yml"
-
     - name: Load CIS profile variables
       ansible.builtin.include_vars:
         file: "{{ vars_dir }}/all/rhel10_cis_profile.yml"
-
-    - name: Load infrastructure variables
-      ansible.builtin.include_vars:
-        file: "{{ vars_dir }}/all/rhel10_integration_registry.yml"
 
     - name: Load platform override variables
       ansible.builtin.include_vars:
@@ -52,13 +44,13 @@
     - name: Validate required sections exist
       ansible.builtin.assert:
         that:
-          - packages is defined
-          - packages['prohibited'] is defined
           - image_config is defined
           - image_config['common_packages'] is defined
           - image_config['partitions'] is defined
           - image_config['users'] is defined
-          - firewall is defined
+          - image_config['prohibited_packages'] is defined
+          - image_config['filesystem_mounts'] is defined
+          - image_config['version'] is defined
           - rhel10_cis_profile is defined
           - rhel10_cis_profile['base_profile'] is defined
         fail_msg: "rhel10_vm_baseline.yml must contain packages, image_config (with common_packages, partitions, users), and firewall; rhel10_cis_profile.yml must contain rhel10_cis_profile"
@@ -101,9 +93,9 @@
           Blueprint TOML generated successfully:
             - Output: {{ output_dir }}/rhel10_{{ platform }}_blueprint.toml
             - Platform: {{ platform }}
-            - Base required packages: {{ packages['required'] | length }}
+            - Common packages: {{ image_config['common_packages'] | length }}
             - Platform packages: {{ packages_platform_required | default([]) | length }}
-            - Prohibited packages: {{ packages['prohibited'] | length }}
+            - Prohibited packages: {{ image_config['prohibited_packages'] | length }}
             - Partitions: {{ image_config['partitions'] | length }}
             - CIS profile: {{ rhel10_cis_profile['base_profile'] }}
 

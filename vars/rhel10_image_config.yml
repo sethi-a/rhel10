@@ -1,24 +1,54 @@
+# vars/rhel10_image_config.yml
 # =============================================================================
-# IMAGE BUILD CONFIGURATION
+# Day 0 — Image Builder Configuration
 # =============================================================================
-# Settings consumed ONLY by generate_blueprint_toml.yml when creating the
-# Image Builder blueprint TOML. These are Day 0 image-build concerns that
-# do not participate in Day 2 drift detection.
+# Defines the golden image build parameters consumed ONLY by the blueprint
+# generation playbook (playbooks/generate_blueprint_toml.yml).
 #
-# - common_packages: OS packages needed in the image but not drift-checked
-#   (they are foundational and cannot be removed without breaking the VM)
-# - users: service accounts baked into the golden image
-# - partitions: filesystem layout with sizes (baseline.filesystem_mounts
-#   tracks mount options only; this section adds sizes for image creation)
-# - timezone, locale, kernel_append: image defaults
+# This file is NOT consumed by Day 1 or Day 2 playbooks. It is separated
+# from rhel10_vm_baseline.yml to keep image build concerns independent of runtime
+# baseline configuration.
+#
+# Consumed by:
+#   - Day 0: generate_blueprint_toml.yml reads this to produce per-platform
+#            Image Builder TOML blueprints
+#
+# Maintenance:
+#   - All changes require a Git pull request and peer review.
+#   - Platform-specific packages are in group_vars/platform_*/baseline.yml
+#     (packages_platform_required variable).
 # =============================================================================
+---
 image_config:
+  version: "1.0.0"
+
+  # Packages included in the golden image (minimal — just enough to boot
+  # and be configurable by Day 1 roles)
   common_packages:
     - python3
     - sudo
     - selinux-policy-targeted
     - scap-security-guide
 
+  # Packages that must NOT be present on hardened systems
+  prohibited_packages:
+    - name: telnet-server
+    - name: telnet
+    - name: rsh-server
+    - name: rsh
+
+  # Filesystem mount options applied at image build time
+  filesystem_mounts:
+    /tmp:
+      options: [nodev, nosuid, noexec]
+    /var/tmp:
+      options: [nodev, nosuid, noexec]
+    /dev/shm:
+      options: [nodev, nosuid, noexec]
+    /home:
+      options: [nodev, nosuid]
+
+  # Service accounts baked into the image
   users:
     - name: ansibleadm
       description: "Ansible Automation Service Account"
@@ -33,14 +63,17 @@ image_config:
       gid: 2001
       ssh_key: "ssh-rsa CHANGEME hsekeep@qbe.com"
 
+  # Timezone and locale
   timezone: "UTC"
   locale:
     languages:
       - "en_US.UTF-8"
     keyboard: "us"
 
+  # Kernel boot parameters
   kernel_append: "audit=1 audit_backlog_limit=8192 crashkernel=auto"
 
+  # Filesystem partition layout
   partitions:
     - mountpoint: /
       size: 10737418240
