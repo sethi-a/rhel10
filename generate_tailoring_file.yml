@@ -66,7 +66,7 @@
             Profile: {{ cis_profile['base_profile'] }}
             Rules disabled: {{ cis_profile['disabled_rules'] | default([]) | length }}
             Rules modified: {{ cis_profile['modified_rules'] | default([]) | length }}
-            
+
 # -------------------------------------------------------------------------
 # Play 2: Distribute to all target hosts
 # -------------------------------------------------------------------------
@@ -86,7 +86,7 @@
 
     - name: Copy tailoring XML to target host
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../files/qbe_cis_tailoring_rhel10.xml"
+        src: "{{ playbook_dir }}/files/qbe_cis_tailoring_rhel10.xml"
         dest: "/tmp/files/qbe_cis_tailoring_rhel10.xml"
         mode: "0644"
 
