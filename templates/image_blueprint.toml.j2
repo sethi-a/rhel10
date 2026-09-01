@@ -14,57 +14,57 @@ groups = []
 # ---------------------------------------------------------------------------
 # Agent packages (qualys, illumio, defender, etc.) are installed at Day 1 by
 # their respective roles from Satellite custom repos — not baked into the image.
-{% set agent_packages = agents | dict2items | map(attribute='value.package') | list %}
-{% for pkg in packages.required %}
-{% if pkg.name not in agent_packages %}
+{%- set agent_packages = agents | dict2items | map(attribute='value.package') | list %}
+{%- for pkg in packages.required %}
+{%- if pkg.name not in agent_packages %}
 [[packages]]
 name = "{{ pkg.name }}"
 version = "{{ pkg.version if pkg.version else '*' }}"
-{% endif %}
-{% endfor %}
+{%- endif %}
+{%- endfor %}
 
 # ---------------------------------------------------------------------------
 # Packages — image-build common (from image_config.common_packages)
 # ---------------------------------------------------------------------------
-{% for pkg in image_config.common_packages %}
+{%- for pkg in image_config.common_packages %}
 [[packages]]
 name = "{{ pkg }}"
 version = "*"
-{% endfor %}
+{%- endfor %}
 
 # ---------------------------------------------------------------------------
 # Packages — platform-specific (from group_vars/platform_{{ platform_name }})
 # ---------------------------------------------------------------------------
-{% for pkg in platform_packages %}
+{%- for pkg in platform_packages %}
 [[packages]]
 name = "{{ pkg.name }}"
 version = "{{ pkg.version if pkg.version else '*' }}"
-{% endfor %}
+{%- endfor %}
 
 [customizations]
 
 # ---------------------------------------------------------------------------
 # Packages — prohibited (from packages.prohibited)
 # ---------------------------------------------------------------------------
-{% for pkg in packages.prohibited %}
+{%- for pkg in packages.prohibited %}
 [[customizations.packages]]
 name = "{{ pkg.name }}"
 exclude = true
-{% endfor %}
+{%- endfor %}
 
 # ---------------------------------------------------------------------------
 # Filesystem layout (sizes from image_config.partitions, mount options from
 # filesystem_mounts where the mountpoint matches)
 # ---------------------------------------------------------------------------
-{% for part in image_config.partitions %}
+{%- for part in image_config.partitions %}
 [[customizations.filesystem]]
 mountpoint = "{{ part.mountpoint }}"
 size = {{ part.size }}
 type = "{{ part.type }}"
-{% if part.mountpoint in filesystem_mounts %}
+{%- if part.mountpoint in filesystem_mounts %}
 options = "{{ filesystem_mounts[part.mountpoint].options | join(',') }}"
-{% endif %}
-{% endfor %}
+{%- endif %}
+{%- endfor %}
 
 # ---------------------------------------------------------------------------
 # Kernel boot parameters
@@ -75,27 +75,27 @@ append = "{{ image_config.kernel_append }}"
 # ---------------------------------------------------------------------------
 # Service accounts
 # ---------------------------------------------------------------------------
-{% for user in image_config.users %}
+{%- for user in image_config.users %}
 [[customizations.user]]
 name = "{{ user.name }}"
 description = "{{ user.description }}"
-{% if user.groups is defined %}
+{%- if user.groups is defined %}
 groups = {{ user.groups | to_json }}
-{% endif %}
+{%- endif %}
 uid = {{ user.uid }}
 gid = {{ user.gid }}
-{% endfor %}
+{%- endfor %}
 
 # ---------------------------------------------------------------------------
 # SSH authorised keys
 # ---------------------------------------------------------------------------
-{% for user in image_config.users %}
-{% if user.ssh_key is defined %}
+{%- for user in image_config.users %}
+{%- if user.ssh_key is defined %}
 [[customizations.sshkey]]
 user = "{{ user.name }}"
 key = "{{ user.ssh_key }}"
-{% endif %}
-{% endfor %}
+{%- endif %}
+{%- endfor %}
 
 # ---------------------------------------------------------------------------
 # Timezone and locale
