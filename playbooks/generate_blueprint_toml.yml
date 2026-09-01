@@ -1,8 +1,9 @@
 # playbooks/generate_blueprint_toml.yml
 # =============================================================================
 # Generates per-platform Image Builder blueprint TOMLs from baseline YAML.
-# Loads group_vars/all/baseline.yml, group_vars/all/cis_profile.yml, and
-# each platform's override file. Outputs one TOML per platform.
+# Variables from group_vars/all/ (baseline.yml, cis_profile.yml) are auto-loaded
+# by Ansible. Platform overrides are loaded explicitly since localhost is not in
+# platform_* inventory groups.
 #
 # Run: ansible-playbook playbooks/generate_blueprint_toml.yml
 # Output: files/rhel10-<platform>.toml (one per platform)
@@ -13,8 +14,6 @@
   gather_facts: true
   connection: local
   vars:
-    baseline_file: "{{ playbook_dir }}/../group_vars/all/baseline.yml"
-    cis_profile_file: "{{ playbook_dir }}/../group_vars/all/cis_profile.yml"
     output_dir: "{{ playbook_dir }}/../files"
     platforms:
       - name: azure
@@ -23,30 +22,21 @@
         override_file: "{{ playbook_dir }}/../group_vars/platform_vcenter/baseline.yml"
 
   tasks:
-    - name: Load baseline YAML
-      ansible.builtin.include_vars:
-        file: "{{ baseline_file }}"
-        name: baseline
-
-    - name: Load CIS profile YAML
-      ansible.builtin.include_vars:
-        file: "{{ cis_profile_file }}"
-
     - name: Validate required sections exist
       ansible.builtin.assert:
         that:
-          - baseline.packages is defined
-          - baseline.packages.required is defined
-          - baseline.packages.prohibited is defined
-          - baseline.filesystem_mounts is defined
-          - baseline.image_config is defined
-          - baseline.image_config.partitions is defined
-          - baseline.image_config.users is defined
-          - baseline.firewall is defined
-          - baseline.agents is defined
+          - packages is defined
+          - packages.required is defined
+          - packages.prohibited is defined
+          - filesystem_mounts is defined
+          - image_config is defined
+          - image_config.partitions is defined
+          - image_config.users is defined
+          - firewall is defined
+          - agents is defined
           - cis_profile is defined
           - cis_profile.base_profile is defined
-        fail_msg: "baseline.yml must contain packages, filesystem_mounts, image_config, firewall, and agents sections"
+        fail_msg: "group_vars/all/baseline.yml must contain packages, filesystem_mounts, image_config, firewall, and agents sections; group_vars/all/cis_profile.yml must contain cis_profile"
 
     - name: Load platform override files
       ansible.builtin.include_vars:
@@ -74,7 +64,7 @@
           Blueprint TOMLs generated successfully:
             Output directory: {{ output_dir }}
             Platforms: {{ platforms | map(attribute='name') | join(', ') }}
-            Base required packages: {{ baseline.packages.required | length }}
-            Prohibited packages: {{ baseline.packages.prohibited | length }}
-            Partitions: {{ baseline.image_config.partitions | length }}
+            Base required packages: {{ packages.required | length }}
+            Prohibited packages: {{ packages.prohibited | length }}
+            Partitions: {{ image_config.partitions | length }}
             CIS profile: {{ cis_profile.base_profile }}

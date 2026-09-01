@@ -5,17 +5,17 @@
 
 name = "qbe-rhel10-{{ platform_name }}"
 description = "QBE RHEL 10 Baseline for {{ platform_name | capitalize }} - CIS Level 1 Compliant"
-version = "{{ baseline.baseline_version }}"
+version = "{{ baseline_version }}"
 modules = []
 groups = []
 
 # ---------------------------------------------------------------------------
-# Packages — required (from baseline.packages.required, excluding agents)
+# Packages — required (from packages.required, excluding agents)
 # ---------------------------------------------------------------------------
 # Agent packages (qualys, illumio, defender, etc.) are installed at Day 1 by
 # their respective roles from Satellite custom repos — not baked into the image.
-{% set agent_packages = baseline.agents | dict2items | map(attribute='value.package') | list %}
-{% for pkg in baseline.packages.required %}
+{% set agent_packages = agents | dict2items | map(attribute='value.package') | list %}
+{% for pkg in packages.required %}
 {% if pkg.name not in agent_packages %}
 
 [[packages]]
@@ -25,9 +25,9 @@ version = "{{ pkg.version if pkg.version else '*' }}"
 {% endfor %}
 
 # ---------------------------------------------------------------------------
-# Packages — image-build common (from baseline.image_config.common_packages)
+# Packages — image-build common (from image_config.common_packages)
 # ---------------------------------------------------------------------------
-{% for pkg in baseline.image_config.common_packages %}
+{% for pkg in image_config.common_packages %}
 
 [[packages]]
 name = "{{ pkg }}"
@@ -47,9 +47,9 @@ version = "{{ pkg.version if pkg.version else '*' }}"
 [customizations]
 
 # ---------------------------------------------------------------------------
-# Packages — prohibited (from baseline.packages.prohibited)
+# Packages — prohibited (from packages.prohibited)
 # ---------------------------------------------------------------------------
-{% for pkg in baseline.packages.prohibited %}
+{% for pkg in packages.prohibited %}
 
 [[customizations.packages]]
 name = "{{ pkg.name }}"
@@ -58,16 +58,16 @@ exclude = true
 
 # ---------------------------------------------------------------------------
 # Filesystem layout (sizes from image_config.partitions, mount options from
-# baseline.filesystem_mounts where the mountpoint matches)
+# filesystem_mounts where the mountpoint matches)
 # ---------------------------------------------------------------------------
-{% for part in baseline.image_config.partitions %}
+{% for part in image_config.partitions %}
 
 [[customizations.filesystem]]
 mountpoint = "{{ part.mountpoint }}"
 size = {{ part.size }}
 type = "{{ part.type }}"
-{% if part.mountpoint in baseline.filesystem_mounts %}
-options = "{{ baseline.filesystem_mounts[part.mountpoint].options | join(',') }}"
+{% if part.mountpoint in filesystem_mounts %}
+options = "{{ filesystem_mounts[part.mountpoint].options | join(',') }}"
 {% endif %}
 {% endfor %}
 
@@ -76,12 +76,12 @@ options = "{{ baseline.filesystem_mounts[part.mountpoint].options | join(',') }}
 # ---------------------------------------------------------------------------
 
 [customizations.kernel]
-append = "{{ baseline.image_config.kernel_append }}"
+append = "{{ image_config.kernel_append }}"
 
 # ---------------------------------------------------------------------------
 # Service accounts
 # ---------------------------------------------------------------------------
-{% for user in baseline.image_config.users %}
+{% for user in image_config.users %}
 
 [[customizations.user]]
 name = "{{ user.name }}"
@@ -96,7 +96,7 @@ gid = {{ user.gid }}
 # ---------------------------------------------------------------------------
 # SSH authorised keys
 # ---------------------------------------------------------------------------
-{% for user in baseline.image_config.users %}
+{% for user in image_config.users %}
 {% if user.ssh_key is defined %}
 
 [[customizations.sshkey]]
@@ -110,14 +110,14 @@ key = "{{ user.ssh_key }}"
 # ---------------------------------------------------------------------------
 
 [customizations.timezone]
-timezone = "{{ baseline.image_config.timezone }}"
+timezone = "{{ image_config.timezone }}"
 
 [customizations.locale]
-languages = {{ baseline.image_config.locale.languages | to_json }}
-keyboard = "{{ baseline.image_config.locale.keyboard }}"
+languages = {{ image_config.locale.languages | to_json }}
+keyboard = "{{ image_config.locale.keyboard }}"
 
 # ---------------------------------------------------------------------------
-# Firewall (baseline defines backend={{ baseline.firewall.backend }})
+# Firewall (baseline defines backend={{ firewall.backend }})
 # ---------------------------------------------------------------------------
 
 [customizations.firewall]
