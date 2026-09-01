@@ -1,0 +1,63 @@
+---
+- name: "Day 1 — Base OS Configuration (JT2)"
+  hosts: "{{ target_hosts | default('all') }}"
+  become: true
+  gather_facts: true
+  vars:
+    ansible_python_interpreter: /usr/libexec/platform-python
+
+  tasks:
+    # --- Satellite registration ---
+    - name: Register VM with Satellite
+      ansible.builtin.include_role:
+        name: qbe.rhel.register_vm
+
+    # --- CA trust bundle ---
+    - name: Install CA certificates
+      ansible.builtin.include_role:
+        name: qbe.rhel.certificates
+
+    # --- Hostname ---
+    - name: Set VM hostname
+      ansible.builtin.include_role:
+        name: qbe.rhel.vm_hostname
+
+    # --- Timezone ---
+    - name: Configure timezone
+      ansible.builtin.include_role:
+        name: qbe.rhel.timezone
+
+    # --- DNS ---
+    - name: Configure DNS resolvers
+      ansible.builtin.include_role:
+        name: qbe.rhel.dns_configure
+
+    # --- NTP ---
+    - name: Configure time synchronisation
+      ansible.builtin.include_role:
+        name: qbe.rhel.timesync
+
+    # --- Patching ---
+    - name: Apply OS patches
+      ansible.builtin.include_role:
+        name: qbe.rhel.patch_apply
+
+    # --- AD join ---
+    - name: Join Active Directory domain
+      ansible.builtin.include_role:
+        name: qbe.rhel.ad_join
+
+    # --- SSSD / Kerberos ---
+    - name: Configure authentication (SSSD/Kerberos)
+      ansible.builtin.include_role:
+        name: qbe.rhel.auth
+
+    # --- OS hardening (sysctl, firewall, SSH, SELinux, AIDE) ---
+    - name: Apply OS hardening
+      ansible.builtin.include_role:
+        name: qbe.rhel.os_hardening
+
+    # --- Audit daemon ---
+    - name: Configure auditd
+      ansible.builtin.include_role:
+        name: qbe.rhel.auditd

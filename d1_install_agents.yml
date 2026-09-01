@@ -1,0 +1,18 @@
+---
+- name: "Day 1 — Agent Installation (JT3)"
+  hosts: "{{ target_hosts | default('all') }}"
+  become: true
+  gather_facts: true
+  vars:
+    ansible_python_interpreter: /usr/libexec/platform-python
+
+  tasks:
+    # --- Qualys (vulnerability scanning) ---
+    - name: Install Qualys agent
+      ansible.builtin.include_role:
+        name: qbe.rhel.qualys_install
+
+    # --- Dynatrace (APM monitoring) ---
+    - name: Install Dynatrace OneAgent
+      ansible.builtin.include_role:
+        name: qbe.rhel.dynatrace_install
