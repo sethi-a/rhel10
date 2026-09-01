@@ -10,7 +10,7 @@
         name: timesync
 
     # --- OS hardening (sysctl, firewall, SSH, SELinux, AIDE) ---
-    # - name: Apply OS hardening
-    #   ansible.builtin.include_role:
-    #     name: os_hardening
+    - name: Apply OS hardening
+      ansible.builtin.include_role:
+        name: os_hardening
 

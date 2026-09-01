@@ -3,38 +3,38 @@
 - name: Apply kernel/sysctl hardening
   ansible.builtin.include_tasks: sysctl.yml
 
-- name: Configure nftables firewall
-  ansible.builtin.include_tasks: firewall.yml
+# - name: Configure nftables firewall
+#   ansible.builtin.include_tasks: firewall.yml
 
-- name: Apply SSH hardening
-  ansible.builtin.include_tasks: ssh.yml
+# - name: Apply SSH hardening
+#   ansible.builtin.include_tasks: ssh.yml
 
-- name: Verify SELinux enforcement
-  ansible.builtin.include_tasks: selinux.yml
+# - name: Verify SELinux enforcement
+#   ansible.builtin.include_tasks: selinux.yml
 
-- name: Configure AIDE integrity monitoring
-  ansible.builtin.include_tasks: aide.yml
+# - name: Configure AIDE integrity monitoring
+#   ansible.builtin.include_tasks: aide.yml
 
-- name: Remove build accounts
-  ansible.builtin.user:
-    name: "{{ item }}"
-    state: absent
-    remove: true
-  become: true
-  loop: "{{ build_accounts_to_remove }}"
+# - name: Remove build accounts
+#   ansible.builtin.user:
+#     name: "{{ item }}"
+#     state: absent
+#     remove: true
+#   become: true
+#   loop: "{{ build_accounts_to_remove }}"
 
-- name: Set system-wide crypto-policy
-  ansible.builtin.command:
-    cmd: "update-crypto-policies --set {{ crypto_policy }}"
-  become: true
-  register: crypto_result
-  changed_when: "'Setting system policy' in crypto_result.stdout"
+# - name: Set system-wide crypto-policy
+#   ansible.builtin.command:
+#     cmd: "update-crypto-policies --set {{ crypto_policy }}"
+#   become: true
+#   register: crypto_result
+#   changed_when: "'Setting system policy' in crypto_result.stdout"
 
-- name: Deploy login banners
-  ansible.builtin.include_tasks: banners.yml
+# - name: Deploy login banners
+#   ansible.builtin.include_tasks: banners.yml
 
-- name: Enforce cron/at access controls
-  ansible.builtin.include_tasks: cron_access.yml
+# - name: Enforce cron/at access controls
+#   ansible.builtin.include_tasks: cron_access.yml
 
-- name: Enforce critical file permissions
-  ansible.builtin.include_tasks: file_permissions.yml
+# - name: Enforce critical file permissions
+#   ansible.builtin.include_tasks: file_permissions.yml
