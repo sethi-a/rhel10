@@ -86,7 +86,7 @@
     - name: Set stats for AAP artifacts
       ansible.builtin.set_stats:
         data:
-          blueprint_toml_content: "{{ toml_content.content | b64decode }}"
+          blueprint_toml_content: "{{ toml_content.content }}"
           blueprint_platform: "{{ platform }}"
           blueprint_base_packages: "{{ packages['required'] | length }}"
           blueprint_platform_packages: "{{ packages_platform_required | default([]) | length }}"
