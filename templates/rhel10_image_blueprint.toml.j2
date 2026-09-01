@@ -107,10 +107,23 @@ enabled = true
 enabled = ["ssh"]
 
 # ---------------------------------------------------------------------------
-# OpenSCAP — CIS Level 1 profile with QBE tailoring
-# (from group_vars/all/rhel10_cis_profile.yml)
+# OpenSCAP — CIS Level 1 profile with JSON tailoring
+# (from group_vars/all/rhel10_cis_profile.yml + openscap/qbe-cis-l1-tailoring.json)
 # ---------------------------------------------------------------------------
 [customizations.openscap]
 profile_id = "{{ rhel10_cis_profile.base_profile }}"
 datastream = "{{ rhel10_cis_profile.content_path }}"
-tailoring_file = "{{ rhel10_cis_profile.tailoring_path }}"
+
+[customizations.openscap.json_tailoring]
+profile_id = "{{ rhel10_cis_profile.json_tailoring_profile_id }}"
+filepath = "{{ rhel10_cis_profile.json_tailoring_filepath }}"
+
+# Embed the JSON tailoring file into the image so Image Builder can read it
+# during the hardening stage. Content is injected from openscap/qbe-cis-l1-tailoring.json.
+[[customizations.directories]]
+path = "/etc/openscap"
+mode = "0755"
+
+[[customizations.files]]
+path = "{{ rhel10_cis_profile.json_tailoring_filepath }}"
+data = {{ tailoring_json_content | to_json }}

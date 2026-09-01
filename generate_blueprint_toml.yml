@@ -41,6 +41,11 @@
       ansible.builtin.include_vars:
         dir: "{{ vars_dir }}/platform_{{ platform }}"
 
+    - name: Read JSON tailoring file
+      ansible.builtin.slurp:
+        src: "{{ playbook_dir }}/openscap/qbe-cis-l1-tailoring.json"
+      register: tailoring_json_raw
+
     - name: Validate required sections exist
       ansible.builtin.assert:
         that:
@@ -53,6 +58,7 @@
           - image_config['version'] is defined
           - rhel10_cis_profile is defined
           - rhel10_cis_profile['base_profile'] is defined
+          - tailoring_json_raw is defined
         fail_msg: "rhel10_vm_baseline.yml must contain packages, image_config (with common_packages, partitions, users), and firewall; rhel10_cis_profile.yml must contain rhel10_cis_profile"
 
     - name: Ensure output directory exists
@@ -69,6 +75,7 @@
       vars:
         platform_name: "{{ platform }}"
         platform_packages: "{{ packages_platform_required | default([]) }}"
+        tailoring_json_content: "{{ tailoring_json_raw.content | b64decode }}"
 
     - name: Read generated TOML content
       ansible.builtin.slurp:

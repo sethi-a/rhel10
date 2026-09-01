@@ -1,0 +1,84 @@
+{
+  "profiles": [
+    {
+      "id": "cis_server_l1_tailored",
+      "base_profile_id": "cis_server_l1",
+      "rules": {
+        "service_autofs_disabled": {
+          "evaluate": false
+        },
+        "mount_option_dev_shm_nodev": {
+          "evaluate": false
+        },
+        "mount_option_dev_shm_nosuid": {
+          "evaluate": false
+        },
+        "mount_option_dev_shm_noexec": {
+          "evaluate": false
+        },
+        "package_talk_removed": {
+          "evaluate": false
+        },
+        "package_talk-server_removed": {
+          "evaluate": false
+        },
+        "package_rsh_removed": {
+          "evaluate": false
+        },
+        "service_rlogin_disabled": {
+          "evaluate": false
+        },
+        "service_rsh_disabled": {
+          "evaluate": false
+        },
+        "package_ypbind_removed": {
+          "evaluate": false
+        },
+        "package_ypserv_removed": {
+          "evaluate": false
+        },
+        "grub2_password": {
+          "evaluate": false
+        },
+        "require_singleuser_auth": {
+          "evaluate": false
+        },
+        "disable_interactive_boot": {
+          "evaluate": false
+        },
+        "security_patches_up_to_date": {
+          "evaluate": false
+        }
+      },
+      "variables": {
+        "var_accounts_password_minlen_login_defs": {
+          "value": "14"
+        },
+        "var_accounts_maximum_age_login_defs": {
+          "value": "90"
+        },
+        "var_accounts_minimum_age_login_defs": {
+          "value": "1"
+        },
+        "var_accounts_password_warn_age_login_defs": {
+          "value": "14"
+        },
+        "var_accounts_passwords_pam_faillock_deny": {
+          "value": "5"
+        },
+        "var_accounts_passwords_pam_faillock_unlock_time": {
+          "value": "900"
+        },
+        "sshd_idle_timeout_value": {
+          "value": "300"
+        },
+        "sshd_max_auth_tries_value": {
+          "value": "4"
+        },
+        "var_accounts_tmout": {
+          "value": "300"
+        }
+      }
+    }
+  ]
+}
