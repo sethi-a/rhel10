@@ -71,8 +71,8 @@
 
     - name: Generate blueprint TOML
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/templates/image_blueprint.toml.j2"
-        dest: "{{ output_dir }}/rhel10-{{ platform }}.toml"
+        src: "{{ playbook_dir }}/templates/rhel10_image_blueprint.toml.j2"
+        dest: "{{ output_dir }}/rhel10_{{ platform }}_blueprint.toml"
         mode: "0644"
       vars:
         platform_name: "{{ platform }}"
@@ -80,7 +80,7 @@
 
     - name: Read generated TOML content
       ansible.builtin.slurp:
-        src: "{{ output_dir }}/rhel10-{{ platform }}.toml"
+        src: "{{ output_dir }}/rhel10_{{ platform }}_blueprint.toml"
       register: toml_content
 
     - name: Display generated TOML
@@ -99,13 +99,13 @@
       ansible.builtin.debug:
         msg: |
           Blueprint TOML generated successfully:
-            - Output: {{ output_dir }}/rhel10-{{ platform }}.toml
+            - Output: {{ output_dir }}/rhel10_{{ platform }}_blueprint.toml
             - Platform: {{ platform }}
             - Base required packages: {{ packages['required'] | length }}
             - Platform packages: {{ packages_platform_required | default([]) | length }}
             - Prohibited packages: {{ packages['prohibited'] | length }}
             - Partitions: {{ image_config['partitions'] | length }}
-            - CIS profile: {{ cis_profile['base_profile'] }}
+            - CIS profile: {{ rhel10_cis_profile['base_profile'] }}
 
 
 # -------------------------------------------------------------------------
@@ -127,10 +127,10 @@
 
     - name: Copy blueprint TOML to target host
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/files/rhel10-{{ platform }}.toml"
-        dest: "/tmp/files/rhel10-{{ platform }}.toml"
+        src: "{{ playbook_dir }}/files/rhel10_{{ platform }}_blueprint.toml"
+        dest: "/tmp/files/rhel10_{{ platform }}_blueprint.toml"
         mode: "0644"
 
     - name: Confirm file delivered
       ansible.builtin.debug:
-        msg: "Blueprint TOML delivered to {{ inventory_hostname }}:/tmp/files/rhel10-{{ platform }}.toml"
+        msg: "Blueprint TOML delivered to {{ inventory_hostname }}:/tmp/files/rhel10_{{ platform }}_blueprint.toml"
