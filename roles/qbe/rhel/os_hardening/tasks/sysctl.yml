@@ -1,0 +1,14 @@
+# roles/os_hardening/tasks/sysctl.yml
+---
+- name: Deploy sysctl hardening configuration
+  ansible.builtin.template:
+    src: sysctl-hardening.conf.j2
+    dest: /etc/sysctl.d/99-qbe-hardening.conf
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: reload sysctl
+
+- name: Flush handlers to apply sysctl immediately
+  ansible.builtin.meta: flush_handlers

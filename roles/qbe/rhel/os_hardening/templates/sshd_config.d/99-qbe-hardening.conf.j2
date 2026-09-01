@@ -1,0 +1,5 @@
+# roles/os_hardening/templates/sshd_config.d/99-qbe-hardening.conf.j2
+# QBE SSH hardening — driven by ssh_config.settings in group_vars
+{% for key, value in ssh_config.settings.items() %}
+{{ key }} {{ value }}
+{% endfor %}

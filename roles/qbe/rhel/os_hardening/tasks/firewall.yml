@@ -1,0 +1,24 @@
+# roles/os_hardening/tasks/firewall.yml
+---
+- name: Ensure nftables is installed
+  ansible.builtin.package:
+    name: "{{ firewall.backend }}"
+    state: present
+  become: true
+
+- name: Deploy nftables ruleset
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/sysconfig/nftables.conf
+    owner: root
+    group: root
+    mode: '0600'
+  become: true
+  notify: restart nftables
+
+- name: Enable nftables service
+  ansible.builtin.systemd:
+    name: "{{ firewall.backend }}"
+    enabled: true
+    state: started
+  become: true

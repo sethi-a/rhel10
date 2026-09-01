@@ -1,0 +1,12 @@
+# roles/os_hardening/tasks/ssh.yml
+---
+- name: Deploy SSH hardening drop-in config
+  ansible.builtin.template:
+    src: sshd_config.d/99-qbe-hardening.conf.j2
+    dest: /etc/ssh/sshd_config.d/99-qbe-hardening.conf
+    owner: root
+    group: root
+    mode: '0600'
+    validate: "sshd -t -f %s"
+  become: true
+  notify: reload sshd

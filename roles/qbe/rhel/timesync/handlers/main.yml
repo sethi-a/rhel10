@@ -1,0 +1,8 @@
+# roles/timesync/handlers/main.yml
+---
+- name: Restart chronyd
+  become: true
+  ansible.builtin.systemd:
+    name: chronyd
+    state: restarted
+    enabled: true

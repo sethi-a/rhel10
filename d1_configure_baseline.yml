@@ -5,57 +5,12 @@
   gather_facts: true
 
   tasks:
-    # --- Satellite registration ---
-    - name: Register VM with Satellite
-      ansible.builtin.include_role:
-        name: register_vm
-
-    # --- CA trust bundle ---
-    - name: Install CA certificates
-      ansible.builtin.include_role:
-        name: certificates
-
-    # --- Hostname ---
-    - name: Set VM hostname
-      ansible.builtin.include_role:
-        name: vm_hostname
-
-    # --- Timezone ---
-    - name: Configure timezone
-      ansible.builtin.include_role:
-        name: timezone
-
-    # --- DNS ---
-    - name: Configure DNS resolvers
-      ansible.builtin.include_role:
-        name: dns_configure
-
-    # --- NTP ---
     - name: Configure time synchronisation
       ansible.builtin.include_role:
         name: timesync
 
-    # --- Patching ---
-    - name: Apply OS patches
-      ansible.builtin.include_role:
-        name: patch_apply
-
-    # --- AD join ---
-    - name: Join Active Directory domain
-      ansible.builtin.include_role:
-        name: ad_join
-
-    # --- SSSD / Kerberos ---
-    - name: Configure authentication (SSSD/Kerberos)
-      ansible.builtin.include_role:
-        name: auth
-
     # --- OS hardening (sysctl, firewall, SSH, SELinux, AIDE) ---
-    - name: Apply OS hardening
-      ansible.builtin.include_role:
-        name: os_hardening
+    # - name: Apply OS hardening
+    #   ansible.builtin.include_role:
+    #     name: os_hardening
 
-    # --- Audit daemon ---
-    - name: Configure auditd
-      ansible.builtin.include_role:
-        name: auditd

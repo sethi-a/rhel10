@@ -1,0 +1,5 @@
+# roles/os_hardening/templates/sysctl-hardening.conf.j2
+# QBE kernel hardening parameters — driven by kernel_parameters in group_vars
+{% for param, conf in kernel_parameters.items() %}
+{{ param }} = {{ conf.value }}
+{% endfor %}

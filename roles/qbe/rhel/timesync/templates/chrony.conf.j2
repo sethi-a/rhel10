@@ -1,0 +1,13 @@
+# Driven by chrony.* in group_vars
+{% for server in chrony.ntp_servers %}
+server {{ server }} iburst
+{% endfor %}
+driftfile /var/lib/chrony/drift
+makestep {{ chrony.makestep_threshold }} {{ chrony.makestep_limit }}
+{% if chrony.rtcsync | default(true) %}
+rtcsync
+{% endif %}
+logdir /var/log/chrony
+{% for net in chrony.deny | default([]) %}
+deny {{ net }}
+{% endfor %}

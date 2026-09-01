@@ -1,0 +1,23 @@
+# roles/os_hardening/templates/nftables.conf.j2
+# QBE nftables ruleset — driven by firewall.* in group_vars
+table inet filter {
+  chain input {
+    type filter hook input priority 0; policy {{ firewall.default_policy }};
+    iif lo accept
+    ct state established,related accept
+{% for rule in firewall.allowed_inbound %}
+    tcp dport {{ rule.port }} {% if rule.source is defined %}ip saddr {{ rule.source }} {% endif %}accept comment "{{ rule.description }}"
+{% endfor %}
+  }
+
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+  }
+
+  chain output {
+    type filter hook output priority 0; policy accept;
+{% for rule in firewall.allowed_outbound | default([]) %}
+    tcp dport {{ rule.port }} ip daddr {{ rule.destination }} accept comment "{{ rule.description }}"
+{% endfor %}
+  }
+}

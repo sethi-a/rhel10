@@ -1,0 +1,13 @@
+# roles/os_hardening/tasks/file_permissions.yml
+---
+- name: Enforce baseline file permissions
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  become: true
+  loop: "{{ file_permissions }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: item.path is exists

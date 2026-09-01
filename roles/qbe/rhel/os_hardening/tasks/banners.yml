@@ -1,0 +1,13 @@
+# roles/os_hardening/tasks/banners.yml
+---
+- name: Deploy login banners
+  ansible.builtin.copy:
+    dest: "{{ item.path }}"
+    content: "{{ item.content_pattern }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  loop: "{{ banners.files }}"
+  loop_control:
+    label: "{{ item.path }}"

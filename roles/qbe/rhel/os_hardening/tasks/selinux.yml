@@ -1,0 +1,13 @@
+# roles/os_hardening/tasks/selinux.yml
+---
+- name: Ensure SELinux is enforcing
+  ansible.posix.selinux:
+    policy: "{{ selinux.policy }}"
+    state: "{{ selinux.mode }}"
+  become: true
+  register: selinux_result
+
+- name: Warn if SELinux was not already enforcing
+  ansible.builtin.debug:
+    msg: "WARNING: SELinux was not {{ selinux.mode }} — corrected to {{ selinux.mode }}/{{ selinux.policy }}"
+  when: selinux_result.changed

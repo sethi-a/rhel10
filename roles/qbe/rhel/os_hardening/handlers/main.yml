@@ -1,0 +1,19 @@
+# roles/os_hardening/handlers/main.yml
+---
+- name: reload sysctl
+  ansible.builtin.command:
+    cmd: sysctl --system
+  become: true
+  changed_when: true
+
+- name: restart nftables
+  ansible.builtin.systemd:
+    name: "{{ firewall.backend }}"
+    state: restarted
+  become: true
+
+- name: reload sshd
+  ansible.builtin.systemd:
+    name: sshd
+    state: reloaded
+  become: true

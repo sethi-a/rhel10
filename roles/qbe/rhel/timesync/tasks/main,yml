@@ -1,0 +1,27 @@
+# roles/timesync/tasks/main.yml
+---
+- name: Configure NTP sources
+  become: true
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart chronyd
+
+- name: Ensure chronyd is running
+  become: true
+  ansible.builtin.systemd:
+    name: chronyd
+    state: started
+    enabled: true
+
+- name: Verify NTP synchronisation
+  ansible.builtin.command:
+    cmd: chronyc tracking
+  register: chrony_status
+  retries: 5
+  delay: 10
+  until: "'Leap status     : Normal' in chrony_status.stdout"
+  changed_when: false

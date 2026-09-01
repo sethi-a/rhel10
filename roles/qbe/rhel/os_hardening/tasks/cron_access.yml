@@ -1,0 +1,39 @@
+# roles/os_hardening/tasks/cron_access.yml
+---
+- name: Create /etc/cron.allow
+  ansible.builtin.file:
+    path: /etc/cron.allow
+    state: touch
+    owner: "{{ cron_access.cron_allow_owner }}"
+    group: "{{ cron_access.cron_allow_group }}"
+    mode: "{{ cron_access.cron_allow_mode }}"
+    modification_time: preserve
+    access_time: preserve
+  become: true
+  when: cron_access.cron_allow_exists | default(true)
+
+- name: Create /etc/at.allow
+  ansible.builtin.file:
+    path: /etc/at.allow
+    state: touch
+    owner: "{{ cron_access.at_allow_owner }}"
+    group: "{{ cron_access.at_allow_group }}"
+    mode: "{{ cron_access.at_allow_mode }}"
+    modification_time: preserve
+    access_time: preserve
+  become: true
+  when: cron_access.at_allow_exists | default(true)
+
+- name: Remove /etc/cron.deny
+  ansible.builtin.file:
+    path: /etc/cron.deny
+    state: absent
+  become: true
+  when: cron_access.cron_deny_absent | default(true)
+
+- name: Remove /etc/at.deny
+  ansible.builtin.file:
+    path: /etc/at.deny
+    state: absent
+  become: true
+  when: cron_access.at_deny_absent | default(true)
