@@ -61,7 +61,7 @@
           - firewall is defined
           - rhel10_cis_profile is defined
           - rhel10_cis_profile['base_profile'] is defined
-        fail_msg: "rhel10_vm_baseline.yml must contain packages, image_config (with common_packages, partitions, users), and firewall; rhel10_cis_profile.yml must contain cis_profile"
+        fail_msg: "rhel10_vm_baseline.yml must contain packages, image_config (with common_packages, partitions, users), and firewall; rhel10_cis_profile.yml must contain rhel10_cis_profile"
 
     - name: Ensure output directory exists
       ansible.builtin.file:
