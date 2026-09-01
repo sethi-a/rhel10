@@ -111,6 +111,6 @@ enabled = ["ssh"]
 # (from group_vars/all/rhel10_cis_profile.yml)
 # ---------------------------------------------------------------------------
 [customizations.openscap]
-profile_id = "{{ cis_profile.base_profile }}"
-datastream = "{{ cis_profile.content_path }}"
-tailoring_file = "{{ cis_profile.tailoring_path }}"
+profile_id = "{{ rhel10_cis_profile.base_profile }}"
+datastream = "{{ rhel10_cis_profile.content_path }}"
+tailoring_file = "{{ rhel10_cis_profile.tailoring_path }}"
