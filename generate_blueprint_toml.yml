@@ -59,6 +59,12 @@
           - cis_profile['base_profile'] is defined
         fail_msg: "baseline.yml must contain packages, image_config, and agents; cis_profile.yml must contain cis_profile"
 
+    - name: Ensure output directory exists
+      ansible.builtin.file:
+        path: "{{ output_dir }}"
+        state: directory
+        mode: "0755"
+        
     - name: Generate blueprint TOML
       ansible.builtin.template:
         src: "{{ playbook_dir }}/templates/image_blueprint.toml.j2"
