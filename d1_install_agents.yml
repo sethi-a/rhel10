@@ -10,9 +10,5 @@
     # --- Qualys (vulnerability scanning) ---
     - name: Install Qualys agent
       ansible.builtin.include_role:
-        name: roles.qbe.rhel.qualys_install
+        name: qbe.rhel.qualys_install
 
-    # --- Dynatrace (APM monitoring) ---
-    - name: Install Dynatrace OneAgent
-      ansible.builtin.include_role:
-        name: roles.qbe.rhel.dynatrace_install
