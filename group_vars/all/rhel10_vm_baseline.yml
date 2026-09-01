@@ -145,20 +145,6 @@ packages:
     - name: telnet
     - name: rsh-server
     - name: rsh
-    - name: tftp-server
-    - name: tftp
-    - name: vsftpd
-    - name: xinetd
-    - name: xorg-x11-server-Xorg
-    - name: avahi-daemon
-    - name: cups
-    - name: ypserv
-    - name: ypbind
-    - name: talk-server
-    - name: talk
-    - name: nfs-utils
-    - name: net-snmp
-    - name: sendmail
 
 # =============================================================================
 # SERVICES
