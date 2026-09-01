@@ -16,8 +16,8 @@
   gather_facts: true
   connection: local
   vars:
-    output_dir: "{{ playbook_dir }}/../files"
-    group_vars_dir: "{{ playbook_dir }}/../group_vars"
+    output_dir: "{{ playbook_dir }}/files"
+    group_vars_dir: "{{ playbook_dir }}/group_vars"
 
   tasks:
     - name: Validate platform is specified
@@ -49,7 +49,7 @@
 
     - name: Generate blueprint TOML
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/image_blueprint.toml.j2"
+        src: "{{ playbook_dir }}/templates/image_blueprint.toml.j2"
         dest: "{{ output_dir }}/rhel10-{{ platform }}.toml"
         mode: "0644"
       vars:
