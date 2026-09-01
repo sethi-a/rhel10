@@ -13,7 +13,7 @@
 # =============================================================================
 ---
 - name: "Generate Image Builder Blueprint for {{ platform }}"
-  hosts: localhost
+  hosts: ansible-1.example.com
   gather_facts: true
   connection: local
   vars:
