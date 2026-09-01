@@ -5,7 +5,7 @@
 # group_vars) to avoid Jinja lookup failures on localhost.
 #
 # Run: ansible-playbook playbooks/generate_tailoring_xml.yml
-# Output: files/qbe_cis_tailoring_rhel10.xml (single file, all environments)
+# Output: blueprints/qbe_cis_tailoring_rhel10.xml (single file, all environments)
 # =============================================================================
 ---
 - name: "Generate CIS Tailoring XML from CIS Profile YAML"
@@ -13,8 +13,8 @@
   gather_facts: true
   connection: local
   vars:
-    vars_dir: "{{ playbook_dir }}/../group_vars"
-    output_file: "{{ playbook_dir }}/../blueprints/qbe_cis_tailoring_rhel10.xml"
+    vars_dir: "{{ playbook_dir }}/group_vars"
+    output_file: "{{ playbook_dir }}/blueprints/qbe_cis_tailoring_rhel10.xml"
 
   tasks:
     - name: Load CIS profile variables
@@ -37,7 +37,7 @@
 
     - name: Generate tailoring XML
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/rhel10_cis_tailoring.xml.j2"
+        src: "{{ playbook_dir }}/templates/rhel10_cis_tailoring.xml.j2"
         dest: "{{ output_file }}"
         mode: "0644"
 
@@ -78,18 +78,18 @@
     ansible_python_interpreter: /usr/libexec/platform-python
 
   tasks:
-    - name: Ensure /tmp/files directory exists
+    - name: Ensure /tmp/blueprints directory exists
       ansible.builtin.file:
-        path: /tmp/files
+        path: /tmp/blueprints
         state: directory
         mode: "0755"
 
     - name: Copy tailoring XML to target host
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/files/qbe_cis_tailoring_rhel10.xml"
-        dest: "/tmp/files/qbe_cis_tailoring_rhel10.xml"
+        src: "{{ playbook_dir }}/blueprints/qbe_cis_tailoring_rhel10.xml"
+        dest: "/tmp/blueprints/qbe_cis_tailoring_rhel10.xml"
         mode: "0644"
 
     - name: Confirm file delivered
       ansible.builtin.debug:
-        msg: "Tailoring XML delivered to {{ inventory_hostname }}:/tmp/files/qbe_cis_tailoring_rhel10.xml"
+        msg: "Tailoring XML delivered to {{ inventory_hostname }}:/tmp/blueprints/qbe_cis_tailoring_rhel10.xml"

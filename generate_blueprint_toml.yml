@@ -111,18 +111,18 @@
     ansible_python_interpreter: /usr/libexec/platform-python
 
   tasks:
-    - name: Ensure /tmp/files directory exists
+    - name: Ensure /tmp/blueprints directory exists
       ansible.builtin.file:
-        path: /tmp/files
+        path: /tmp/blueprints
         state: directory
         mode: "0755"
 
     - name: Copy blueprint TOML to target host
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/blueprints/rhel10_{{ platform }}_blueprint.toml"
-        dest: "/tmp/files/rhel10_{{ platform }}_blueprint.toml"
+        dest: "/tmp/blueprints/rhel10_{{ platform }}_blueprint.toml"
         mode: "0644"
 
     - name: Confirm file delivered
       ansible.builtin.debug:
-        msg: "Blueprint TOML delivered to {{ inventory_hostname }}:/tmp/files/rhel10_{{ platform }}_blueprint.toml"
+        msg: "Blueprint TOML delivered to {{ inventory_hostname }}:/tmp/blueprints/rhel10_{{ platform }}_blueprint.toml"
