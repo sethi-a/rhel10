@@ -17,7 +17,6 @@ groups = []
 {% set agent_packages = agents | dict2items | map(attribute='value.package') | list %}
 {% for pkg in packages.required %}
 {% if pkg.name not in agent_packages %}
-
 [[packages]]
 name = "{{ pkg.name }}"
 version = "{{ pkg.version if pkg.version else '*' }}"
@@ -28,7 +27,6 @@ version = "{{ pkg.version if pkg.version else '*' }}"
 # Packages — image-build common (from image_config.common_packages)
 # ---------------------------------------------------------------------------
 {% for pkg in image_config.common_packages %}
-
 [[packages]]
 name = "{{ pkg }}"
 version = "*"
@@ -38,7 +36,6 @@ version = "*"
 # Packages — platform-specific (from group_vars/platform_{{ platform_name }})
 # ---------------------------------------------------------------------------
 {% for pkg in platform_packages %}
-
 [[packages]]
 name = "{{ pkg.name }}"
 version = "{{ pkg.version if pkg.version else '*' }}"
@@ -50,7 +47,6 @@ version = "{{ pkg.version if pkg.version else '*' }}"
 # Packages — prohibited (from packages.prohibited)
 # ---------------------------------------------------------------------------
 {% for pkg in packages.prohibited %}
-
 [[customizations.packages]]
 name = "{{ pkg.name }}"
 exclude = true
@@ -61,7 +57,6 @@ exclude = true
 # filesystem_mounts where the mountpoint matches)
 # ---------------------------------------------------------------------------
 {% for part in image_config.partitions %}
-
 [[customizations.filesystem]]
 mountpoint = "{{ part.mountpoint }}"
 size = {{ part.size }}
@@ -74,7 +69,6 @@ options = "{{ filesystem_mounts[part.mountpoint].options | join(',') }}"
 # ---------------------------------------------------------------------------
 # Kernel boot parameters
 # ---------------------------------------------------------------------------
-
 [customizations.kernel]
 append = "{{ image_config.kernel_append }}"
 
@@ -82,7 +76,6 @@ append = "{{ image_config.kernel_append }}"
 # Service accounts
 # ---------------------------------------------------------------------------
 {% for user in image_config.users %}
-
 [[customizations.user]]
 name = "{{ user.name }}"
 description = "{{ user.description }}"
@@ -98,7 +91,6 @@ gid = {{ user.gid }}
 # ---------------------------------------------------------------------------
 {% for user in image_config.users %}
 {% if user.ssh_key is defined %}
-
 [[customizations.sshkey]]
 user = "{{ user.name }}"
 key = "{{ user.ssh_key }}"
@@ -108,7 +100,6 @@ key = "{{ user.ssh_key }}"
 # ---------------------------------------------------------------------------
 # Timezone and locale
 # ---------------------------------------------------------------------------
-
 [customizations.timezone]
 timezone = "{{ image_config.timezone }}"
 
@@ -119,7 +110,6 @@ keyboard = "{{ image_config.locale.keyboard }}"
 # ---------------------------------------------------------------------------
 # Firewall (baseline defines backend={{ firewall.backend }})
 # ---------------------------------------------------------------------------
-
 [customizations.firewall]
 enabled = true
 
@@ -130,7 +120,6 @@ enabled = ["ssh"]
 # OpenSCAP — CIS Level 1 profile with QBE tailoring
 # (from group_vars/all/cis_profile.yml)
 # ---------------------------------------------------------------------------
-
 [customizations.openscap]
 profile_id = "{{ cis_profile.base_profile }}"
 datastream = "{{ cis_profile.content_path }}"
