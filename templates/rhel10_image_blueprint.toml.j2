@@ -1,6 +1,6 @@
 #jinja2: trim_blocks: True, lstrip_blocks: True
 # {{ ansible_managed }}
-# Generated from group_vars/all/baseline.yml + cis_profile.yml
+# Generated from group_vars/all/baseline.yml + rhel10_cis_profile.yml
 # Platform: {{ platform_name }}
 # Do not edit manually — regenerate with: ansible-playbook playbooks/generate_blueprint_toml.yml
 
@@ -119,9 +119,9 @@ enabled = ["ssh"]
 
 # ---------------------------------------------------------------------------
 # OpenSCAP — CIS Level 1 profile with QBE tailoring
-# (from group_vars/all/cis_profile.yml)
+# (from group_vars/all/rhel10_cis_profile.yml)
 # ---------------------------------------------------------------------------
 [customizations.openscap]
-profile_id = "{{ cis_profile.base_profile }}"
-datastream = "{{ cis_profile.content_path }}"
-tailoring_file = "{{ cis_profile.tailoring_path }}"
+profile_id = "{{ rhel10_cis_profile.base_profile }}"
+datastream = "{{ rhel10_cis_profile.content_path }}"
+tailoring_file = "{{ rhel10_cis_profile.tailoring_path }}"
