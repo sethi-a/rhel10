@@ -81,17 +81,6 @@
 
     - name: Display generated TOML
       ansible.builtin.debug:
-        msg: "{{ toml_content.content | b64decode }}"
+        msg: "{{ (toml_content.content | b64decode).split('\n')  }}"
 
-    - name: Report generation summary
-      ansible.builtin.debug:
-        msg: |
-          Blueprint TOML generated successfully:
-            - Output: {{ output_dir }}/rhel10-{{ platform }}.toml
-            - Platform: {{ platform }}
-            - Base required packages: {{ packages['required'] | length }}
-            - Platform packages: {{ packages_platform_required | default([]) | length }}
-            - Prohibited packages: {{ packages['prohibited'] | length }}
-            - Partitions: {{ image_config['partitions'] | length }}
-            - CIS profile: {{ cis_profile['base_profile'] }}
     
