@@ -17,9 +17,9 @@
   gather_facts: true
   connection: local
   vars:
-    vars_dir: "{{ playbook_dir }}/../group_vars"
-    image_vars_dir: "{{ playbook_dir }}/../vars"
-    output_dir: "{{ playbook_dir }}/../blueprints"
+    vars_dir: "{{ playbook_dir }}/group_vars"
+    image_vars_dir: "{{ playbook_dir }}/vars"
+    output_dir: "{{ playbook_dir }}/blueprints"
 
   tasks:
     - name: Validate platform is specified
