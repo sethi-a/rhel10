@@ -102,3 +102,29 @@
             - Prohibited packages: {{ packages['prohibited'] | length }}
             - Partitions: {{ image_config['partitions'] | length }}
             - CIS profile: {{ cis_profile['base_profile'] }}
+
+
+# -------------------------------------------------------------------------
+# Play 2: Distribute to all target hosts
+# -------------------------------------------------------------------------
+- name: "Distribute Blueprint TOML to Target Hosts"
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Ensure /tmp/files directory exists
+      ansible.builtin.file:
+        path: /tmp/files
+        state: directory
+        mode: "0755"
+
+    - name: Copy blueprint TOML to target host
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/files/rhel10-{{ platform }}.toml"
+        dest: "/tmp/files/rhel10-{{ platform }}.toml"
+        mode: "0644"
+
+    - name: Confirm file delivered
+      ansible.builtin.debug:
+        msg: "Blueprint TOML delivered to {{ inventory_hostname }}:/tmp/files/rhel10-{{ platform }}.toml"
