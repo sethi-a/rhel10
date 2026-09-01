@@ -2,7 +2,7 @@
 ---
 - name: Install Qualys Cloud Agent
   become: true
-  ansible.builtin.dnf:
+  ansible.builtin.package:
     name: "{{ agents.qualys.package }}"
     enablerepo: "{{ qualys_agent_repo }}"
     state: present
