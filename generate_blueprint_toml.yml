@@ -17,8 +17,9 @@
   gather_facts: true
   connection: local
   vars:
-    vars_dir: "{{ playbook_dir }}/group_vars"
-    output_dir: "{{ playbook_dir }}/files"
+    vars_dir: "{{ playbook_dir }}/../group_vars"
+    image_vars_dir: "{{ playbook_dir }}/../vars"
+    output_dir: "{{ playbook_dir }}/../blueprints"
 
   tasks:
     - name: Validate platform is specified
@@ -28,17 +29,21 @@
           - platform in ['azure', 'vcenter']
         fail_msg: "Specify platform via -e platform=azure or -e platform=vcenter"
 
+    - name: Load image config variables
+      ansible.builtin.include_vars:
+        file: "{{ image_vars_dir }}/rhel10_image_config.yml"
+
     - name: Load baseline variables
       ansible.builtin.include_vars:
-        file: "{{ vars_dir }}/all/baseline.yml"
+        file: "{{ vars_dir }}/all/rhel10_vm_baseline.yml"
 
     - name: Load CIS profile variables
       ansible.builtin.include_vars:
-        file: "{{ vars_dir }}/all/cis_profile.yml"
+        file: "{{ vars_dir }}/all/rhel10_cis_profile.yml"
 
     - name: Load infrastructure variables
       ansible.builtin.include_vars:
-        file: "{{ vars_dir }}/all/infrastructure.yml"
+        file: "{{ vars_dir }}/all/rhel10_integration_registry.yml"
 
     - name: Load platform override variables
       ansible.builtin.include_vars:
@@ -48,16 +53,15 @@
       ansible.builtin.assert:
         that:
           - packages is defined
-          - packages['required'] is defined
           - packages['prohibited'] is defined
           - image_config is defined
+          - image_config['common_packages'] is defined
           - image_config['partitions'] is defined
           - image_config['users'] is defined
           - firewall is defined
-          - agents is defined
           - cis_profile is defined
           - cis_profile['base_profile'] is defined
-        fail_msg: "baseline.yml must contain packages, image_config, and agents; cis_profile.yml must contain cis_profile"
+        fail_msg: "rhel10_vm_baseline.yml must contain packages, image_config (with common_packages, partitions, users), and firewall; rhel10_cis_profile.yml must contain cis_profile"
 
     - name: Ensure output directory exists
       ansible.builtin.file:

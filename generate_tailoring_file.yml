@@ -13,21 +13,21 @@
   gather_facts: true
   connection: local
   vars:
-    vars_dir: "{{ playbook_dir }}/group_vars"
-    output_file: "{{ playbook_dir }}/files/qbe_cis_tailoring_rhel10.xml"
+    vars_dir: "{{ playbook_dir }}/../group_vars"
+    output_file: "{{ playbook_dir }}/../blueprints/qbe_cis_tailoring_rhel10.xml"
 
   tasks:
     - name: Load CIS profile variables
       ansible.builtin.include_vars:
-        file: "{{ vars_dir }}/all/cis_profile.yml"
+        file: "{{ vars_dir }}/all/rhel10_cis_profile.yml"
 
     - name: Validate CIS profile section exists
       ansible.builtin.assert:
         that:
-          - cis_profile is defined
-          - cis_profile['base_profile'] is defined
-          - cis_profile['tailoring_id'] is defined
-        fail_msg: "cis_profile.yml must contain a cis_profile section with base_profile and tailoring_id"
+          - rhel10_cis_profile is defined
+          - rhel10_cis_profile['base_profile'] is defined
+          - rhel10_cis_profile['tailoring_id'] is defined
+        fail_msg: "rhel10_cis_profile.yml must contain a cis_profile section with base_profile and tailoring_id"
 
     - name: Ensure output directory exists
       ansible.builtin.file:
@@ -37,7 +37,7 @@
 
     - name: Generate tailoring XML
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/templates/cis_tailoring.xml.j2"
+        src: "{{ playbook_dir }}/../templates/rhel10_cis_tailoring.xml.j2"
         dest: "{{ output_file }}"
         mode: "0644"
 
@@ -54,18 +54,18 @@
       ansible.builtin.set_stats:
         data:
           tailoring_xml_content: "{{ tailoring_content.content | b64decode }}"
-          tailoring_xml_profile: "{{ cis_profile['base_profile'] }}"
-          tailoring_xml_disabled_rules: "{{ cis_profile['disabled_rules'] | default([]) | length }}"
-          tailoring_xml_modified_rules: "{{ cis_profile['modified_rules'] | default([]) | length }}"
+          tailoring_xml_profile: "{{ rhel10_cis_profile['base_profile'] }}"
+          tailoring_xml_disabled_rules: "{{ rhel10_cis_profile['disabled_rules'] | default([]) | length }}"
+          tailoring_xml_modified_rules: "{{ rhel10_cis_profile['modified_rules'] | default([]) | length }}"
 
     - name: Report generation summary
       ansible.builtin.debug:
         msg: |
           Tailoring XML generated successfully:
             Output: {{ output_file }}
-            Profile: {{ cis_profile['base_profile'] }}
-            Rules disabled: {{ cis_profile['disabled_rules'] | default([]) | length }}
-            Rules modified: {{ cis_profile['modified_rules'] | default([]) | length }}
+            Profile: {{ rhel10_cis_profile['base_profile'] }}
+            Rules disabled: {{ rhel10_cis_profile['disabled_rules'] | default([]) | length }}
+            Rules modified: {{ rhel10_cis_profile['modified_rules'] | default([]) | length }}
 
 # -------------------------------------------------------------------------
 # Play 2: Distribute to all target hosts
