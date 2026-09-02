@@ -36,6 +36,30 @@
   </tr>
 {% endfor %}
 </table>
+
+{% for host in report_data.drifted_hosts %}
+<h3>{{ host.hostname }} — What Drifted</h3>
+<table>
+  <tr>
+    <th>Category</th>
+    <th>Item</th>
+    <th>Expected</th>
+    <th>Actual</th>
+    <th>Severity</th>
+  </tr>
+{% for cat_name, cat_data in host.baseline_drift.categories.items() if cat_data.drift_items | length > 0 %}
+{% for item in cat_data.drift_items %}
+  <tr>
+    <td>{{ cat_name }}</td>
+    <td>{{ item.item }}</td>
+    <td>{{ item.expected }}</td>
+    <td class="red">{{ item.actual }}</td>
+    <td>{{ item.severity | upper }}</td>
+  </tr>
+{% endfor %}
+{% endfor %}
+</table>
+{% endfor %}
 {% endif %}
 
 {% if report_data.clean_hosts | length > 0 %}
