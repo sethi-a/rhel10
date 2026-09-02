@@ -4,7 +4,7 @@
   ansible.builtin.include_tasks: _check_single_agent.yml
   loop: "{{ agents | dict2items }}"
   loop_control:
-    label: "{{ item.key }}"
+    label: "{{ agent_item.key }}"
     loop_var: agent_item
 
 - name: Record agent check results
