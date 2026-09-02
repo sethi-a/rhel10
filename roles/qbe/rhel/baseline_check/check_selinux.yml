@@ -21,15 +21,13 @@
         (
           (_selinux_mode.stdout | lower | trim != selinux.mode) | ternary(
             [{'item': 'SELinux mode', 'expected': selinux.mode,
-              'actual': _selinux_mode.stdout | lower | trim,
-              'severity': selinux.severity}],
+              'actual': _selinux_mode.stdout | lower | trim }],
             []
           )
         ) + (
           (selinux.policy not in _selinux_status.stdout) | ternary(
             [{'item': 'SELinux policy', 'expected': selinux.policy,
-              'actual': 'unknown (not ' + selinux.policy + ')',
-              'severity': selinux.severity}],
+              'actual': 'unknown (not ' + selinux.policy + ')' }],
             []
           )
         )

@@ -81,13 +81,7 @@
           'total_drift': drift_results.categories.values()
             | map(attribute='drift_items') | map('length') | sum,
           'has_drift': drift_results.categories.values()
-            | map(attribute='drift_items') | map('length') | sum > 0,
-          'max_severity': _severity_order[
-            drift_results.categories.values()
-            | map(attribute='drift_items') | flatten
-            | map(attribute='severity') | map('extract', _severity_rank)
-            | max | default(0)
-          ] | default('none')
+            | map(attribute='drift_items') | map('length') | sum > 0
         })
       }}
   vars:
