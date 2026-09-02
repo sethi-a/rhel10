@@ -17,7 +17,7 @@
     # --- Baseline comparison (packages, services, sysctl, SSH, PAM, etc.) ---
     - name: Run baseline comparison checks
       ansible.builtin.include_role:
-        name: qbe.rhel.baseline_check
+        name: baseline_check
 
 
     # --- Map drifted categories to Day 1 remediation roles ---
