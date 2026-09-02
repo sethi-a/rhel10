@@ -15,8 +15,7 @@
       {{
         _file_drift | default([]) + (
           (not _file_stats.results[idx].stat.exists) | ternary(
-            [{'item': item.path, 'expected': 'exists', 'actual': 'missing',
-              'severity': item.severity}],
+            [{'item': item.path, 'expected': 'exists', 'actual': 'missing'}],
             (
               _file_stats.results[idx].stat.pw_name != item.owner or
               _file_stats.results[idx].stat.gr_name != item.group or
@@ -24,8 +23,8 @@
             ) | ternary(
               [{'item': item.path,
                 'expected': item.owner + ':' + item.group + ' ' + item.mode,
-                'actual': _file_stats.results[idx].stat.pw_name + ':' + _file_stats.results[idx].stat.gr_name + ' ' + _file_stats.results[idx].stat.mode,
-                'severity': item.severity}],
+                'actual': _file_stats.results[idx].stat.pw_name + ':' + _file_stats.results[idx].stat.gr_name + ' ' + _file_stats.results[idx].stat.mode
+                }],
               []
             )
           )
