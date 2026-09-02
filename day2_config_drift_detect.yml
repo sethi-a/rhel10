@@ -73,8 +73,7 @@
               auto_remediate: "{{ drift_auto_remediate }}"
               baseline_drift: "{{ drift_results }}"
               role_drift: "{{ _role_drift }}"
-              has_drift: >-
-                {{ drift_results.has_drift is changed }}
+              has_drift: "{{ drift_results.has_drift | default(false) | bool }}"
 
       rescue:
         - name: Build error summary when scan fails
