@@ -80,75 +80,20 @@
             name: packages_baseline
           when: "'packages_baseline' in _drifted_role_names"
 
-        - name: Remediate baseline services
-          ansible.builtin.include_role:
-            name: services_baseline
-          when: "'services_baseline' in _drifted_role_names"
-
         - name: Remediate OS hardening
           ansible.builtin.include_role:
             name: os_hardening
           when: "'os_hardening' in _drifted_role_names"
-
-        - name: Remediate authentication
-          ansible.builtin.include_role:
-            name: auth
-          when: "'auth' in _drifted_role_names"
-
-        - name: Remediate auditd
-          ansible.builtin.include_role:
-            name: auditd
-          when: "'auditd' in _drifted_role_names"
-
-        - name: Remediate rsyslog
-          ansible.builtin.include_role:
-            name: rsyslog_configure
-          when: "'rsyslog_configure' in _drifted_role_names"
-
-        - name: Remediate DNS
-          ansible.builtin.include_role:
-            name: dns_configure
-          when: "'dns_configure' in _drifted_role_names"
 
         - name: Remediate NTP/chrony
           ansible.builtin.include_role:
             name: timesync
           when: "'timesync' in _drifted_role_names"
 
-        - name: Remediate filesystem mounts
-          ansible.builtin.include_role:
-            name: mounts_enforce
-          when: "'mounts_enforce' in _drifted_role_names"
-
         - name: Remediate Qualys agent
           ansible.builtin.include_role:
             name: qualys_install
           when: "'qualys_install' in _drifted_role_names"
-
-        - name: Remediate Dynatrace agent
-          ansible.builtin.include_role:
-            name: dynatrace_install
-          when: "'dynatrace_install' in _drifted_role_names"
-
-        - name: Remediate Illumio VEN
-          ansible.builtin.include_role:
-            name: illumio_install
-          when: "'illumio_install' in _drifted_role_names"
-
-        - name: Remediate Defender
-          ansible.builtin.include_role:
-            name: defender_install
-          when: "'defender_install' in _drifted_role_names"
-
-        - name: Remediate BigFix agent
-          ansible.builtin.include_role:
-            name: bigfix_install
-          when: "'bigfix_install' in _drifted_role_names"
-
-        - name: Remediate ILMT scanner
-          ansible.builtin.include_role:
-            name: ilmt_install
-          when: "'ilmt_install' in _drifted_role_names"
 
         - name: Remediate SNOW Discovery agent
           ansible.builtin.include_role:
