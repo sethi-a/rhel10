@@ -31,7 +31,7 @@
           (agent_item.value.package is defined and
            agent_item.value.package not in ansible_facts.packages) | ternary(
             [{'item': agent_item.key + ' (package)', 'expected': 'installed',
-              'actual': 'missing', 'severity': agent_item.value.severity | default('moderate')}],
+              'actual': 'missing'}],
             []
           )
         ) + (
