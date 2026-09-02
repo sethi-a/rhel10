@@ -107,7 +107,7 @@
   gather_facts: false
   connection: local
   vars:
-    scan_targets: "{{ groups[target_hosts | default('rhel10_all')] }}"
+    scan_targets: "{{ groups[target_hosts | default('all')] }}"
     all_results: >-
       {{ scan_targets | map('extract', hostvars, 'host_drift_summary') | list }}
     drifted_hosts: >-
