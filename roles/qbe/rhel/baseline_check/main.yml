@@ -71,28 +71,28 @@
 # - name: Run DNS resolver checks
 #   ansible.builtin.include_tasks: check_dns.yml
 
-- name: Calculate overall drift summary
-  ansible.builtin.set_fact:
-    drift_results: >-
-      {{
-        drift_results | combine({
-          'total_checks': drift_results.categories.values()
-            | map(attribute='checks') | map('length') | sum,
-          'total_drift': drift_results.categories.values()
-            | map(attribute='drift_items') | map('length') | sum,
-          'has_drift': drift_results.categories.values()
-            | map(attribute='drift_items') | map('length') | sum > 0
-        })
-      }}
-  vars:
-    _severity_rank:
-      minor: 1
-      moderate: 2
-      major: 3
-      critical: 4
-    _severity_order:
-      0: "none"
-      1: "minor"
-      2: "moderate"
-      3: "major"
-      4: "critical"
+# - name: Calculate overall drift summary
+#   ansible.builtin.set_fact:
+#     drift_results: >-
+#       {{
+#         drift_results | combine({
+#           'total_checks': drift_results.categories.values()
+#             | map(attribute='checks') | map('length') | sum,
+#           'total_drift': drift_results.categories.values()
+#             | map(attribute='drift_items') | map('length') | sum,
+#           'has_drift': drift_results.categories.values()
+#             | map(attribute='drift_items') | map('length') | sum > 0
+#         })
+#       }}
+#   vars:
+#     _severity_rank:
+#       minor: 1
+#       moderate: 2
+#       major: 3
+#       critical: 4
+#     _severity_order:
+#       0: "none"
+#       1: "minor"
+#       2: "moderate"
+#       3: "major"
+#       4: "critical"
