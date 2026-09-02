@@ -103,9 +103,8 @@
 # Play 2: Consolidate results — generate report, create ticket, send email
 # =========================================================================
 - name: "Day 2 -- Drift Detection Consolidation"
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  connection: local
+  hosts: "{{ target_hosts | default('rhel10_all') }}"
+  gather_facts: true
   vars:
     scan_targets: "{{ ansible_play_hosts_all }}"
     all_results: >-
@@ -117,18 +116,12 @@
     total_scanned: "{{ scan_targets | length }}"
     total_drifted: "{{ drifted_hosts | length }}"
     total_clean: "{{ clean_hosts | length }}"
-    drift_percentage: >-
-      {{ ((total_drifted | int / total_scanned | int) * 100) | round(1) }}
-    # Per-environment breakdown
-    env_summary: >-
-      {{ dict(all_results | groupby('environment')) }}
-    report_filename: "drift-report-{{ ansible_date_time.date }}.html"
-    report_path: "/tmp/{{ report_filename }}"
+    report_path: "/tmp/drift-report-{{ ansible_date_time.date }}.html"
 
   tasks:
     - name: Generate HTML drift report
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/templates/drift_report.html.j2"
+        src: "{{ playbook_dir }}/../roles/day2/baseline_check/templates/drift_report.html.j2"
         dest: "{{ report_path }}"
         mode: "0644"
       vars:
@@ -137,19 +130,26 @@
           total_scanned: "{{ total_scanned }}"
           total_drifted: "{{ total_drifted }}"
           total_clean: "{{ total_clean }}"
-          drift_percentage: "{{ drift_percentage }}"
+          drift_percentage: "{{ ((total_drifted | int / total_scanned | int) * 100) | round(1) }}"
           drifted_hosts: "{{ drifted_hosts }}"
           clean_hosts: "{{ clean_hosts }}"
-          env_summary: "{{ env_summary }}"
       run_once: true
       delegate_to: localhost
 
-    - name: Copy report to server
-      ansible.builtin.copy:
-        src: "{{ report_path }}"
-        dest: "/var/www/html/reports/drift/{{ report_filename }}"
-        mode: "0644"
-      delegate_to: "node1.example.com"
-      become: true
+    - name: Print drift summary
+      ansible.builtin.debug:
+        msg:
+          - "Scanned: {{ total_scanned }} | Drifted: {{ total_drifted }} | Clean: {{ total_clean }}"
+          - "Report: {{ report_path }}"
       run_once: true
-          
+      delegate_to: localhost
+
+    - name: Store drift summary as workflow artifact
+      ansible.builtin.set_stats:
+        data:
+          drift_scan_date: "{{ ansible_date_time.iso8601 }}"
+          drift_total_scanned: "{{ total_scanned }}"
+          drift_total_drifted: "{{ total_drifted }}"
+      run_once: true
+      delegate_to: localhost
+
