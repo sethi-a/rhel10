@@ -1,0 +1,78 @@
+# roles/baseline_check/tasks/check_cron_access.yml
+---
+- name: Stat cron.allow
+  ansible.builtin.stat:
+    path: /etc/cron.allow
+  register: _cron_allow
+
+- name: Stat at.allow
+  ansible.builtin.stat:
+    path: /etc/at.allow
+  register: _at_allow
+
+- name: Stat cron.deny
+  ansible.builtin.stat:
+    path: /etc/cron.deny
+  register: _cron_deny
+
+- name: Stat at.deny
+  ansible.builtin.stat:
+    path: /etc/at.deny
+  register: _at_deny
+
+- name: Evaluate cron/at access drift
+  ansible.builtin.set_fact:
+    _cron_drift: >-
+      {{
+        (cron_access.cron_allow_exists and not _cron_allow.stat.exists) | ternary(
+          [{'item': 'cron_access.cron_allow', 'expected': 'exists',
+            'actual': 'missing'}], []
+        ) + (
+          (_cron_allow.stat.exists and
+           _cron_allow.stat.pw_name != cron_access.cron_allow_owner) | ternary(
+            [{'item': 'cron_access.cron_allow_owner',
+              'expected': cron_access.cron_allow_owner,
+              'actual': _cron_allow.stat.pw_name | default('n/a')
+              }], []
+          )
+        ) + (
+          (_cron_allow.stat.exists and
+           _cron_allow.stat.mode != cron_access.cron_allow_mode) | ternary(
+            [{'item': 'cron_access.cron_allow_mode',
+              'expected': cron_access.cron_allow_mode,
+              'actual': _cron_allow.stat.mode | default('n/a')
+              }], []
+          )
+        ) + (
+          (cron_access.at_allow_exists and not _at_allow.stat.exists) | ternary(
+            [{'item': 'cron_access.at_allow', 'expected': 'exists',
+              'actual': 'missing'}], []
+          )
+        ) + (
+          (cron_access.cron_deny_absent and _cron_deny.stat.exists) | ternary(
+            [{'item': 'cron_access.cron_deny', 'expected': 'absent',
+              'actual': 'exists'}], []
+          )
+        ) + (
+          (cron_access.at_deny_absent and _at_deny.stat.exists) | ternary(
+            [{'item': 'cron_access.at_deny', 'expected': 'absent',
+              'actual': 'exists'}], []
+          )
+        )
+      }}
+
+- name: Record cron access check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'cron_access': {
+              'checks': ['cron_allow', 'cron_allow_owner', 'cron_allow_mode',
+                          'at_allow', 'cron_deny_absent', 'at_deny_absent'],
+              'drift_items': _cron_drift | default([]),
+              'status': (_cron_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}
