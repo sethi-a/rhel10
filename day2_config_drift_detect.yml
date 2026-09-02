@@ -53,11 +53,12 @@
 
     - name: Build role_drift list
       ansible.builtin.set_fact:
-        _role_drift: >-
-          {{ (_drifted_roles_from_categories + (_drifted_roles_from_agents | default([])))
-             | unique
-             | map('community.general.dict_kw', role='__item__', changed=true)
-             | list }}
+        _role_drift: []
+
+    - name: Add roles to drift list
+      ansible.builtin.set_fact:
+        _role_drift: "{{ _role_drift + [{'role': item, 'changed': true}] }}"
+      loop: "{{ (_drifted_roles_from_categories + (_drifted_roles_from_agents | default([]))) | unique }}"
 
     # --- Consolidate per-host results ---
     - name: Build consolidated per-host drift fact
