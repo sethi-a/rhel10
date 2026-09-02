@@ -103,8 +103,8 @@
 # Play 2: Consolidate results — generate report, create ticket, send email
 # =========================================================================
 - name: "Day 2 -- Drift Detection Consolidation"
-  hosts: localhost
-  gather_facts: true
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
   connection: local
   vars:
     scan_targets: "{{ groups[target_hosts | default('rhel10_all')] }}"
@@ -145,6 +145,8 @@
           drifted_hosts: "{{ drifted_hosts }}"
           clean_hosts: "{{ clean_hosts }}"
           env_summary: "{{ env_summary }}"
+      run_once: true
+      delegate_to: localhost
 
     - name: Copy report to Satellite web server
       ansible.builtin.copy:
@@ -153,4 +155,5 @@
         mode: "0644"
       delegate_to: "node1.example.com"
       become: true
+      run_once: true
           
