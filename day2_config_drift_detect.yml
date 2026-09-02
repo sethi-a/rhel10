@@ -121,11 +121,7 @@
       {{ ((total_drifted | int / total_scanned | int) * 100) | round(1) }}
     # Per-environment breakdown
     env_summary: >-
-      {{
-        all_results | groupby('environment') | items2dict(
-          key_name=0, value_name=1
-        )
-      }}
+      {{ dict(all_results | groupby('environment')) }}
     report_filename: "drift-report-{{ ansible_date_time.date }}.html"
     report_path: "/tmp/{{ report_filename }}"
 
