@@ -100,52 +100,52 @@
             name: snow_discovery_install
           when: "'snow_discovery_install' in _drifted_role_names"
 
-#         # --- Step 5: Re-scan to verify ---
-#         - name: Re-run baseline check after remediation
-#           ansible.builtin.include_role:
-#             name: baseline_check
+        # --- Step 5: Re-scan to verify ---
+        - name: Re-run baseline check after remediation
+          ansible.builtin.include_role:
+            name: baseline_check
 
-#         - name: Build post-remediation summary
-#           ansible.builtin.set_fact:
-#             remediation_result:
-#               hostname: "{{ inventory_hostname }}"
-#               environment: "{{ environment }}"
-#               region: "{{ region }}"
-#               roles_remediated: "{{ _drifted_role_names }}"
-#               post_scan_clean: "{{ not (drift_results.has_drift | default(false)) }}"
-#               pre_drift_count: "{{ _pre_drift_count }}"
-#               post_drift_count: "{{ drift_results.total_drift | default(0) }}"
+        - name: Build post-remediation summary
+          ansible.builtin.set_fact:
+            remediation_result:
+              hostname: "{{ inventory_hostname }}"
+              environment: "{{ environment }}"
+              region: "{{ region }}"
+              roles_remediated: "{{ _drifted_role_names }}"
+              post_scan_clean: "{{ not (drift_results.has_drift | default(false)) }}"
+              pre_drift_count: "{{ _pre_drift_count }}"
+              post_drift_count: "{{ drift_results.total_drift | default(0) }}"
 
-# # =========================================================================
-# # Play 2: Report remediation outcome
-# # =========================================================================
-# - name: "Day 2 -- Drift Remediation Report"
-#   hosts: "{{ target_hosts | default('all') }}"
-#   gather_facts: true
-#   vars:
-#     remediated_hosts: >-
-#       {{ ansible_play_hosts_all
-#          | map('extract', hostvars, 'remediation_result')
-#          | select('defined') | list }}
-#     successful: >-
-#       {{ remediated_hosts | selectattr('post_scan_clean', 'equalto', true) | list }}
-#     failed: >-
-#       {{ remediated_hosts | rejectattr('post_scan_clean', 'equalto', true) | list }}
+# =========================================================================
+# Play 2: Report remediation outcome
+# =========================================================================
+- name: "Day 2 -- Drift Remediation Report"
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: true
+  vars:
+    remediated_hosts: >-
+      {{ ansible_play_hosts_all
+         | map('extract', hostvars, 'remediation_result')
+         | select('defined') | list }}
+    successful: >-
+      {{ remediated_hosts | selectattr('post_scan_clean', 'equalto', true) | list }}
+    failed: >-
+      {{ remediated_hosts | rejectattr('post_scan_clean', 'equalto', true) | list }}
 
-#   tasks:
-#     - name: Print remediation summary
-#       ansible.builtin.debug:
-#         msg:
-#           - "Remediated: {{ remediated_hosts | length }} | Success: {{ successful | length }} | Failed: {{ failed | length }}"
-#       run_once: true
-#       delegate_to: localhost
+  tasks:
+    - name: Print remediation summary
+      ansible.builtin.debug:
+        msg:
+          - "Remediated: {{ remediated_hosts | length }} | Success: {{ successful | length }} | Failed: {{ failed | length }}"
+      run_once: true
+      delegate_to: localhost
 
-#     - name: Store remediation results as workflow artifact
-#       ansible.builtin.set_stats:
-#         data:
-#           remediation_total: "{{ remediated_hosts | length }}"
-#           remediation_successful: "{{ successful | length }}"
-#           remediation_failed: "{{ failed | length }}"
-#           remediation_results: "{{ remediated_hosts }}"
-#       run_once: true
-#       delegate_to: localhost
+    - name: Store remediation results as workflow artifact
+      ansible.builtin.set_stats:
+        data:
+          remediation_total: "{{ remediated_hosts | length }}"
+          remediation_successful: "{{ successful | length }}"
+          remediation_failed: "{{ failed | length }}"
+          remediation_results: "{{ remediated_hosts }}"
+      run_once: true
+      delegate_to: localhost
