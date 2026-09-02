@@ -5,10 +5,6 @@
   gather_facts: true
 
   tasks:
-    # - name: Configure time synchronisation
-    #   ansible.builtin.include_role:
-    #     name: timesync
-
     # --- OS hardening (sysctl, firewall, SSH, SELinux, AIDE) ---
     - name: Apply OS hardening
       ansible.builtin.include_role:
