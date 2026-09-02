@@ -4,7 +4,7 @@
 # Play 1: Scan all hosts — baseline comparison + AIDE integrity check
 # =========================================================================
 - name: "Day 2 -- Drift Detection Scan"
-  hosts: "{{ target_hosts | default('rhel10_all') }}"
+  hosts: "{{ target_hosts | default('all') }}"
   become: true
   serial: "{{ detect_serial | default('20%') }}"
   gather_facts: true
