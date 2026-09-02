@@ -1,0 +1,50 @@
+# roles/baseline_check/tasks/_check_single_agent.yml
+---
+- name: "Check {{ agent_item.key }} package is installed"
+  ansible.builtin.package_facts:
+    manager: rpm
+
+- name: "Check {{ agent_item.key }} service status"
+  ansible.builtin.systemd:
+    name: "{{ agent_item.value.service }}"
+  register: _agent_svc
+  check_mode: true
+  changed_when: false
+  ignore_errors: true
+
+- name: "Run {{ agent_item.key }} validation command"
+  ansible.builtin.command:
+    cmd: "{{ agent_item.value.validation_command }}"
+  register: _agent_validation
+  changed_when: false
+  failed_when: false
+  become: true
+  when: agent_item.value.validation_command is defined
+
+- name: "Evaluate {{ agent_item.key }} drift"
+  ansible.builtin.set_fact:
+    _agent_drift: >-
+      {{
+        _agent_drift | default([]) +
+        (
+          (agent_item.value.package not in ansible_facts.packages) | ternary(
+            [{'item': agent_item.key + ' (package)', 'expected': 'installed',
+              'actual': 'missing'}],
+            []
+          )
+        ) + (
+          (_agent_svc.status.ActiveState | default('unknown') != 'active') | ternary(
+            [{'item': agent_item.key + ' (service)', 'expected': 'active',
+              'actual': _agent_svc.status.ActiveState | default('unknown')}],
+            []
+          )
+        ) + (
+          (agent_item.value.validation_command is defined and
+           agent_item.value.expected_status_pattern is defined and
+           _agent_validation.stdout | default('') is not search(agent_item.value.expected_status_pattern)) | ternary(
+            [{'item': agent_item.key + ' (validation)', 'expected': agent_item.value.expected_status_pattern,
+              'actual': _agent_validation.stdout | default('no output') | truncate(80)}],
+            []
+          )
+        )
+      }}
