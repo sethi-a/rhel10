@@ -38,7 +38,7 @@
           (agent_item.value.service is defined and
            _agent_svc.status.ActiveState | default('unknown') != 'active') | ternary(
             [{'item': agent_item.key + ' (service)', 'expected': 'active',
-              'actual': _agent_svc.status.ActiveState | default('unknown')],
+              'actual': _agent_svc.status.ActiveState | default('unknown')}],
             []
           )
         ) + (
