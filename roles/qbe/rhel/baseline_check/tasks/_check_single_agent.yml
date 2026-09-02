@@ -31,14 +31,15 @@
           (agent_item.value.package is defined and
            agent_item.value.package not in ansible_facts.packages) | ternary(
             [{'item': agent_item.key + ' (package)', 'expected': 'installed',
-              'actual': 'missing'}],
+              'actual': 'missing', 'severity': agent_item.value.severity | default('moderate')}],
             []
           )
         ) + (
           (agent_item.value.service is defined and
            _agent_svc.status.ActiveState | default('unknown') != 'active') | ternary(
             [{'item': agent_item.key + ' (service)', 'expected': 'active',
-              'actual': _agent_svc.status.ActiveState | default('unknown')}],
+              'actual': _agent_svc.status.ActiveState | default('unknown'),
+              'severity': agent_item.value.severity | default('moderate')}],
             []
           )
         ) + (
@@ -46,7 +47,8 @@
            agent_item.value.expected_status_pattern is defined and
            _agent_validation.stdout | default('') is not search(agent_item.value.expected_status_pattern)) | ternary(
             [{'item': agent_item.key + ' (validation)', 'expected': agent_item.value.expected_status_pattern,
-              'actual': _agent_validation.stdout | default('no output') | truncate(80)}],
+              'actual': _agent_validation.stdout | default('no output') | truncate(80),
+              'severity': agent_item.value.severity | default('moderate')}],
             []
           )
         )
