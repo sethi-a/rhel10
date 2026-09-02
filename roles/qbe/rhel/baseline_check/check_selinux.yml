@@ -1,0 +1,51 @@
+# roles/baseline_check/tasks/check_selinux.yml
+---
+- name: Get SELinux status
+  ansible.builtin.command:
+    cmd: getenforce
+  register: _selinux_mode
+  changed_when: false
+  become: true
+
+- name: Get SELinux policy
+  ansible.builtin.command:
+    cmd: sestatus
+  register: _selinux_status
+  changed_when: false
+  become: true
+
+- name: Evaluate SELinux drift
+  ansible.builtin.set_fact:
+    _selinux_drift: >-
+      {{
+        (
+          (_selinux_mode.stdout | lower | trim != selinux.mode) | ternary(
+            [{'item': 'SELinux mode', 'expected': selinux.mode,
+              'actual': _selinux_mode.stdout | lower | trim,
+              'severity': selinux.severity}],
+            []
+          )
+        ) + (
+          (selinux.policy not in _selinux_status.stdout) | ternary(
+            [{'item': 'SELinux policy', 'expected': selinux.policy,
+              'actual': 'unknown (not ' + selinux.policy + ')',
+              'severity': selinux.severity}],
+            []
+          )
+        )
+      }}
+
+- name: Record SELinux check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'selinux': {
+              'checks': ['mode', 'policy'],
+              'drift_items': _selinux_drift | default([]),
+              'status': (_selinux_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}

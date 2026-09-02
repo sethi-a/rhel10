@@ -1,0 +1,23 @@
+# roles/baseline_check/tasks/check_agents.yml
+---
+- name: Check each agent configuration
+  ansible.builtin.include_tasks: _check_single_agent.yml
+  loop: "{{ agents | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+    loop_var: agent_item
+
+- name: Record agent check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'agents': {
+              'checks': agents | dict2items | map(attribute='key') | list,
+              'drift_items': _agent_drift | default([]),
+              'status': (_agent_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}

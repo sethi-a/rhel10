@@ -1,0 +1,82 @@
+# roles/baseline_check/tasks/check_services.yml
+# Concatenates base + platform-specific services before checking.
+---
+- name: Build combined enabled service list (base + platform)
+  ansible.builtin.set_fact:
+    _all_enabled_services: >-
+      {{ services.enabled | default([]) + services_platform_enabled | default([]) }}
+
+- name: Check enabled services
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+  register: _svc_status
+  loop: "{{ _all_enabled_services }}"
+  loop_control:
+    label: "{{ item.name }}"
+  ignore_errors: true
+  check_mode: true
+  changed_when: false
+
+- name: Evaluate service drift for enabled services
+  ansible.builtin.set_fact:
+    _svc_drift: >-
+      {{
+        _svc_drift | default([]) + (
+          (_svc_status.results[idx].status.ActiveState | default('unknown') != 'active' or
+           _svc_status.results[idx].status.UnitFileState | default('unknown') != 'enabled') | ternary(
+            [{'item': item.name, 'expected': 'active/enabled',
+              'actual': (_svc_status.results[idx].status.ActiveState | default('unknown')) + '/' + (_svc_status.results[idx].status.UnitFileState | default('unknown')),
+              'severity': item.severity}],
+            []
+          )
+        )
+      }}
+  loop: "{{ _all_enabled_services }}"
+  loop_control:
+    label: "{{ item.name }}"
+    index_var: idx
+
+- name: Check disabled services
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+  register: _svc_disabled_status
+  loop: "{{ services.disabled | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  ignore_errors: true
+  check_mode: true
+  changed_when: false
+
+- name: Evaluate service drift for disabled services
+  ansible.builtin.set_fact:
+    _svc_drift: >-
+      {{
+        _svc_drift | default([]) + (
+          (_svc_disabled_status.results[idx].status.ActiveState | default('inactive') == 'active' or
+           _svc_disabled_status.results[idx].status.UnitFileState | default('disabled') == 'enabled') | ternary(
+            [{'item': item.name, 'expected': 'inactive/disabled',
+              'actual': (_svc_disabled_status.results[idx].status.ActiveState | default('unknown')) + '/' + (_svc_disabled_status.results[idx].status.UnitFileState | default('unknown')),
+              'severity': item.severity}],
+            []
+          )
+        )
+      }}
+  loop: "{{ services.disabled | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+    index_var: idx
+
+- name: Record service check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'services': {
+              'checks': _all_enabled_services + (services.disabled | default([])),
+              'drift_items': _svc_drift | default([]),
+              'status': (_svc_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}

@@ -1,0 +1,67 @@
+# roles/baseline_check/tasks/check_chrony.yml
+---
+- name: Get chrony sources
+  ansible.builtin.command:
+    cmd: chronyc -c sources
+  register: _chrony_sources
+  changed_when: false
+  failed_when: false
+  become: true
+
+- name: Read chrony.conf
+  ansible.builtin.command:
+    cmd: grep -v '^#' /etc/chrony.conf
+  register: _chrony_conf
+  changed_when: false
+  failed_when: false
+  become: true
+
+- name: Check chronyd service is running
+  ansible.builtin.systemd:
+    name: chronyd
+  register: _chrony_svc
+  check_mode: true
+  changed_when: false
+  ignore_errors: true
+
+- name: Evaluate chrony drift
+  ansible.builtin.set_fact:
+    _chrony_drift: >-
+      {{
+        ((_chrony_svc.status.ActiveState | default('unknown') != 'active') | ternary(
+          [{'item': 'chrony.service', 'expected': 'active',
+            'actual': _chrony_svc.status.ActiveState | default('unknown'),
+            'severity': chrony.severity}], []
+        ))
+      }}
+
+- name: Check each NTP server is configured
+  ansible.builtin.set_fact:
+    _chrony_drift: >-
+      {{
+        _chrony_drift | default([]) + (
+          (_chrony_conf.stdout | default('') is not search(item)) | ternary(
+            [{'item': 'chrony.ntp_server.' + item,
+              'expected': 'configured',
+              'actual': 'not found in chrony.conf',
+              'severity': chrony.severity}],
+            []
+          )
+        )
+      }}
+  loop: "{{ chrony.ntp_servers }}"
+
+- name: Record chrony check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'chrony': {
+              'checks': ['service'] + chrony.ntp_servers,
+              'drift_items': _chrony_drift | default([]),
+              'status': (_chrony_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}

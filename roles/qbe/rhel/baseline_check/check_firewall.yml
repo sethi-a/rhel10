@@ -1,0 +1,51 @@
+# roles/baseline_check/tasks/check_firewall.yml
+---
+- name: Check nftables service is active
+  ansible.builtin.systemd:
+    name: nftables
+  register: _nft_service
+  check_mode: true
+  changed_when: false
+  ignore_errors: true
+
+- name: Get current nftables ruleset
+  ansible.builtin.command:
+    cmd: nft list ruleset
+  register: _nft_ruleset
+  changed_when: false
+  become: true
+  when: _nft_service.status.ActiveState | default('') == 'active'
+
+- name: Evaluate firewall drift
+  ansible.builtin.set_fact:
+    _fw_drift: >-
+      {{
+        (_nft_service.status.ActiveState | default('') != 'active') | ternary(
+          [{'item': 'nftables service', 'expected': 'active',
+            'actual': _nft_service.status.ActiveState | default('unknown'),
+            'severity': firewall.severity}],
+          (firewall.allowed_inbound | map(attribute='port') | map('string')
+           | difference(_nft_ruleset.stdout_lines | select('search', 'dport') | map('regex_search', '\\d+') | select('string') | list)
+           | length > 0) | ternary(
+            [{'item': 'nftables inbound rules', 'expected': 'all baseline rules present',
+              'actual': 'missing rules detected',
+              'severity': firewall.severity}],
+            []
+          )
+        )
+      }}
+
+- name: Record firewall check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'firewall': {
+              'checks': ['nftables_service', 'inbound_rules', 'default_policy'],
+              'drift_items': _fw_drift | default([]),
+              'status': (_fw_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}

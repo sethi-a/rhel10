@@ -1,0 +1,52 @@
+# roles/baseline_check/tasks/check_ssh.yml
+---
+- name: Read current sshd configuration
+  ansible.builtin.command:
+    cmd: sshd -T
+  register: _sshd_config
+  changed_when: false
+  failed_when: false
+  become: true
+
+- name: Evaluate SSH configuration drift
+  ansible.builtin.set_fact:
+    _ssh_drift: >-
+      {{
+        _ssh_drift | default([]) + (
+          (_sshd_config.stdout_lines
+           | select('match', '^' + item.key | lower + ' ')
+           | first | default('')
+           | regex_replace('^' + item.key | lower + ' ', '')
+           | trim
+           | lower
+           != item.value | string | lower) | ternary(
+            [{'item': 'ssh_config.' + item.key,
+              'expected': item.value,
+              'actual': _sshd_config.stdout_lines
+                        | select('match', '^' + item.key | lower + ' ')
+                        | first | default('not set')
+                        | regex_replace('^' + item.key | lower + ' ', '')
+                        | trim,
+              'severity': ssh_config.severity}],
+            []
+          )
+        )
+      }}
+  loop: "{{ ssh_config.settings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Record SSH check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'ssh_config': {
+              'checks': ssh_config.settings | dict2items | map(attribute='key') | list,
+              'drift_items': _ssh_drift | default([]),
+              'status': (_ssh_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}

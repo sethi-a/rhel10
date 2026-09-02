@@ -1,0 +1,52 @@
+# roles/baseline_check/tasks/check_file_permissions.yml
+# Normalises file mode comparison: pads to 4 digits (e.g. "644" → "0644").
+---
+- name: Stat critical files
+  ansible.builtin.stat:
+    path: "{{ item.path }}"
+  register: _file_stats
+  loop: "{{ file_permissions }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Evaluate file permission drift
+  ansible.builtin.set_fact:
+    _file_drift: >-
+      {{
+        _file_drift | default([]) + (
+          (not _file_stats.results[idx].stat.exists) | ternary(
+            [{'item': item.path, 'expected': 'exists', 'actual': 'missing',
+              'severity': item.severity}],
+            (
+              _file_stats.results[idx].stat.pw_name != item.owner or
+              _file_stats.results[idx].stat.gr_name != item.group or
+              _file_stats.results[idx].stat.mode != '%04s' | format(item.mode | int)
+            ) | ternary(
+              [{'item': item.path,
+                'expected': item.owner + ':' + item.group + ' ' + item.mode,
+                'actual': _file_stats.results[idx].stat.pw_name + ':' + _file_stats.results[idx].stat.gr_name + ' ' + _file_stats.results[idx].stat.mode,
+                'severity': item.severity}],
+              []
+            )
+          )
+        )
+      }}
+  loop: "{{ file_permissions }}"
+  loop_control:
+    label: "{{ item.path }}"
+    index_var: idx
+
+- name: Record file permission check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'file_permissions': {
+              'checks': file_permissions | map(attribute='path') | list,
+              'drift_items': _file_drift | default([]),
+              'status': (_file_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}

@@ -1,0 +1,48 @@
+# roles/baseline_check/tasks/check_banners.yml
+---
+- name: Read banner file contents
+  ansible.builtin.slurp:
+    src: "{{ item.path }}"
+  register: _banner_contents
+  loop: "{{ banners.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  failed_when: false
+  become: true
+
+- name: Evaluate banner drift
+  ansible.builtin.set_fact:
+    _banner_drift: >-
+      {{
+        _banner_drift | default([]) + (
+          (_banner_contents.results[idx].content is not defined or
+           _banner_contents.results[idx].content | b64decode
+           is not search(item.content_pattern)) | ternary(
+            [{'item': 'banners.' + item.path,
+              'expected': 'contains "' + item.content_pattern + '"',
+              'actual': (_banner_contents.results[idx].content is defined)
+                        | ternary('content mismatch', 'file missing'),
+              'severity': banners.severity}],
+            []
+          )
+        )
+      }}
+  loop: "{{ banners.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+    index_var: idx
+
+- name: Record banner check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'banners': {
+              'checks': banners.files | map(attribute='path') | list,
+              'drift_items': _banner_drift | default([]),
+              'status': (_banner_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}

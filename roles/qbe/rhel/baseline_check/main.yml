@@ -1,0 +1,104 @@
+# roles/baseline_check/tasks/main.yml
+# Baseline variables (packages, services, ssh_config, etc.) are loaded
+# automatically from group_vars/ by Ansible's variable precedence.
+# No manual include_vars or combine() is needed.
+---
+- name: Initialise drift results structure
+  ansible.builtin.set_fact:
+    drift_results:
+      hostname: "{{ inventory_hostname }}"
+      region: "{{ region }}"
+      environment: "{{ environment }}"
+      scan_timestamp: "{{ ansible_date_time.iso8601 }}"
+      baseline_version: "{{ baseline_version }}"
+      categories: {}
+      total_checks: 0
+      total_drift: 0
+      max_severity: "none"
+      has_drift: false
+
+# - name: Run package checks
+#   ansible.builtin.include_tasks: check_packages.yml
+
+# - name: Run service checks
+#   ansible.builtin.include_tasks: check_services.yml
+
+# - name: Run kernel parameter checks
+#   ansible.builtin.include_tasks: check_kernel_params.yml
+
+# - name: Run file permission checks
+#   ansible.builtin.include_tasks: check_file_permissions.yml
+
+- name: Run SELinux checks
+  ansible.builtin.include_tasks: check_selinux.yml
+
+# - name: Run filesystem mount checks
+#   ansible.builtin.include_tasks: check_mounts.yml
+
+# - name: Run firewall checks
+#   ansible.builtin.include_tasks: check_firewall.yml
+
+# - name: Run agent configuration checks
+#   ansible.builtin.include_tasks: check_agents.yml
+
+# - name: Run SSH configuration checks
+#   ansible.builtin.include_tasks: check_ssh.yml
+
+# - name: Run PAM configuration checks
+#   ansible.builtin.include_tasks: check_pam.yml
+
+# - name: Run login.defs checks
+#   ansible.builtin.include_tasks: check_login_defs.yml
+
+# - name: Run banner checks
+#   ansible.builtin.include_tasks: check_banners.yml
+
+# - name: Run cron/at access checks
+#   ansible.builtin.include_tasks: check_cron_access.yml
+
+# - name: Run audit rules checks
+#   ansible.builtin.include_tasks: check_audit_rules.yml
+
+# - name: Run auditd config checks
+#   ansible.builtin.include_tasks: check_auditd_config.yml
+
+# - name: Run rsyslog checks
+#   ansible.builtin.include_tasks: check_rsyslog.yml
+
+# - name: Run chrony/NTP checks
+#   ansible.builtin.include_tasks: check_chrony.yml
+
+# - name: Run DNS resolver checks
+#   ansible.builtin.include_tasks: check_dns.yml
+
+- name: Calculate overall drift summary
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'total_checks': drift_results.categories.values()
+            | map(attribute='checks') | map('length') | sum,
+          'total_drift': drift_results.categories.values()
+            | map(attribute='drift_items') | map('length') | sum,
+          'has_drift': drift_results.categories.values()
+            | map(attribute='drift_items') | map('length') | sum > 0,
+          'max_severity': _severity_order[
+            drift_results.categories.values()
+            | map(attribute='drift_items') | flatten
+            | map(attribute='severity') | map('extract', _severity_rank)
+            | max | default(0)
+          ] | default('none')
+        })
+      }}
+  vars:
+    _severity_rank:
+      minor: 1
+      moderate: 2
+      major: 3
+      critical: 4
+    _severity_order:
+      0: "none"
+      1: "minor"
+      2: "moderate"
+      3: "major"
+      4: "critical"

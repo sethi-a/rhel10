@@ -8,7 +8,7 @@
 ---
 baseline_description: "RHEL 10 Development baseline (permissive)"
 
-drift_auto_remediate: true
+drift_auto_remediate: false
 
 # --- Allow container workloads ---
 kernel_parameters:

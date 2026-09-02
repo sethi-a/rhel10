@@ -1,0 +1,66 @@
+# roles/baseline_check/tasks/check_packages.yml
+# Concatenates base + platform-specific packages before checking.
+---
+- name: Build combined required package list (base + platform)
+  ansible.builtin.set_fact:
+    _all_required_packages: >-
+      {{ packages.required | default([]) + packages_platform_required | default([]) + packages_version_pinned | default([]) }}
+    _all_prohibited_packages: >-
+      {{ packages.prohibited | default([]) }}
+
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+    manager: rpm
+
+- name: Check required packages
+  ansible.builtin.set_fact:
+    _pkg_drift: >-
+      {{
+        _pkg_drift | default([]) + (
+          (item.name not in ansible_facts.packages) | ternary(
+            [{'item': item.name, 'expected': 'present',
+              'actual': 'absent', 'severity': item.severity}],
+            (item.version is not none and
+             item.version | string != ansible_facts.packages[item.name][0].version | string) | ternary(
+              [{'item': item.name, 'expected': 'version ' + (item.version | string),
+                'actual': 'version ' + ansible_facts.packages[item.name][0].version,
+                'severity': item.severity}],
+              []
+            )
+          )
+        )
+      }}
+  loop: "{{ _all_required_packages }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Check prohibited packages
+  ansible.builtin.set_fact:
+    _pkg_drift: >-
+      {{
+        _pkg_drift | default([]) + (
+          (item.name in ansible_facts.packages) | ternary(
+            [{'item': item.name, 'expected': 'absent',
+              'actual': 'present', 'severity': item.severity}],
+            []
+          )
+        )
+      }}
+  loop: "{{ _all_prohibited_packages }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Record package check results
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'categories': drift_results.categories | combine({
+            'packages': {
+              'checks': _all_required_packages + _all_prohibited_packages,
+              'drift_items': _pkg_drift | default([]),
+              'status': (_pkg_drift | default([]) | length == 0) | ternary('compliant', 'drifted')
+            }
+          })
+        })
+      }}
