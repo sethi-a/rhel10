@@ -103,7 +103,7 @@
 # Play 2: Consolidate results — generate report, create ticket, send email
 # =========================================================================
 - name: "Day 2 -- Drift Detection Consolidation"
-  hosts: "{{ target_hosts | default('rhel10_all') }}"
+  hosts: "{{ target_hosts | default('all') }}"
   gather_facts: true
   vars:
     scan_targets: "{{ ansible_play_hosts_all }}"
@@ -121,7 +121,7 @@
   tasks:
     - name: Generate HTML drift report
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../roles/day2/baseline_check/templates/drift_report.html.j2"
+        src: "{{ playbook_dir }}/templates/drift_report.html.j2"
         dest: "{{ report_path }}"
         mode: "0644"
       vars:
