@@ -13,7 +13,7 @@
 # Play 1: Remediate drifted non-prod hosts
 # =========================================================================
 - name: "Day 2 -- Drift Auto-Remediation"
-  hosts: "{{ target_hosts | default('rhel10_all') }}"
+  hosts: "{{ target_hosts | default('all') }}"
   become: true
   serial: "{{ remediate_serial | default('10%') }}"
   gather_facts: true
@@ -31,9 +31,7 @@
     - drift_auto_remediate | bool
     - environment != 'prod'
     - hostvars[inventory_hostname].host_drift_summary.has_drift | default(false) | bool
-    - hostvars[inventory_hostname].host_drift_summary.baseline_drift.max_severity | default('moderate') not in ['major', 'critical']
-    - not (hostvars[inventory_hostname].host_drift_summary.aide_drift | default(false) | bool)
-
+    
   tasks:
     - name: Log remediation start
       ansible.builtin.debug:

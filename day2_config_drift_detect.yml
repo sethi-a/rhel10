@@ -162,6 +162,7 @@
           drift_scan_date: "{{ ansible_date_time.iso8601 }}"
           drift_total_scanned: "{{ total_scanned }}"
           drift_total_drifted: "{{ total_drifted }}"
+          host_drift_summary: "{{ all_results }}"
       run_once: true
       delegate_to: localhost
 
