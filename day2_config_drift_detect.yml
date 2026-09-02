@@ -6,6 +6,7 @@
 - name: "Day 2 -- Drift Detection Scan"
   hosts: "{{ target_hosts | default('all') }}"
   become: true
+  ignore_unreachable: true
   serial: "{{ detect_serial | default('20%') }}"
   gather_facts: true
   vars:
@@ -116,8 +117,8 @@
     total_scanned: "{{ scan_targets | length }}"
     total_drifted: "{{ drifted_hosts | length }}"
     total_clean: "{{ clean_hosts | length }}"
-    report_path: "/tmp/drift-report-{{ ansible_date_time.date }}.html"
-    report_filename: "drift-report-{{ ansible_date_time.date }}.html"
+    report_path: "/tmp/drift-report-{{ ansible_date_time.iso8601_basic_short }}.html"
+    report_filename: "drift-report-{{ ansible_date_time.iso8601_basic_short }}.html"
 
   tasks:
     - name: Generate HTML drift report
