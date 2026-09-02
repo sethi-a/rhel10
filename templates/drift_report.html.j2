@@ -71,9 +71,7 @@
         <td>{{ host.environment }}</td>
         <td>{{ host.platform | default('—') }}</td>
         <td>{{ host.baseline_drift.total_drift }}</td>
-        <td><span class="severity-{{ host.baseline_drift.max_severity }}">{{ host.baseline_drift.max_severity | upper }}</span></td>
         <td>{{ host.baseline_drift.categories | dict2items | selectattr('value.status', 'equalto', 'drifted') | map(attribute='key') | join(', ') }}</td>
-        <td class="{{ host.aide_drift | ternary('aide-alert', 'aide-clean') }}">{{ host.aide_drift | ternary('ALERT', 'Clean') }}</td>
         <td>{{ host.auto_remediate | ternary('Yes', 'No') }}</td>
       </tr>
 {% endfor %}
@@ -90,7 +88,6 @@
         <th>Item</th>
         <th>Expected</th>
         <th>Actual</th>
-        <th>Severity</th>
       </tr>
     </thead>
     <tbody>
@@ -103,7 +100,6 @@
         <td>{{ item.item }}</td>
         <td>{{ item.expected }}</td>
         <td>{{ item.actual }}</td>
-        <td><span class="severity-{{ item.severity }}">{{ item.severity | upper }}</span></td>
       </tr>
 {% endfor %}
 {% endif %}

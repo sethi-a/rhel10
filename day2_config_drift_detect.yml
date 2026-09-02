@@ -107,7 +107,7 @@
   gather_facts: false
   connection: local
   vars:
-    scan_targets: "{{ groups[target_hosts | default('all')] }}"
+    scan_targets: "{{ ansible_play_hosts_all }}"
     all_results: >-
       {{ scan_targets | map('extract', hostvars, 'host_drift_summary') | list }}
     drifted_hosts: >-
@@ -148,7 +148,7 @@
       run_once: true
       delegate_to: localhost
 
-    - name: Copy report to Satellite web server
+    - name: Copy report to server
       ansible.builtin.copy:
         src: "{{ report_path }}"
         dest: "/var/www/html/reports/drift/{{ report_filename }}"
