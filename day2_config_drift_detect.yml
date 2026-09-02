@@ -25,56 +25,56 @@
     #   category_role_map  — baseline category → Day 1 role
     #   agent_role_map     — agent name → Day 1 install role
 
-    - name: Identify drifted categories
-      ansible.builtin.set_fact:
-        _drifted_categories: >-
-          {{ drift_results.categories | dict2items
-             | selectattr('value.status', 'equalto', 'drifted')
-             | map(attribute='key') | list }}
+    # - name: Identify drifted categories
+    #   ansible.builtin.set_fact:
+    #     _drifted_categories: >-
+    #       {{ drift_results.categories | dict2items
+    #          | selectattr('value.status', 'equalto', 'drifted')
+    #          | map(attribute='key') | list }}
 
-    - name: Map drifted categories to Day 1 roles
-      ansible.builtin.set_fact:
-        _drifted_roles_from_categories: >-
-          {{ _drifted_categories
-             | reject('equalto', 'agents')
-             | map('extract', category_role_map)
-             | select('string')
-             | unique | list }}
+    # - name: Map drifted categories to Day 1 roles
+    #   ansible.builtin.set_fact:
+    #     _drifted_roles_from_categories: >-
+    #       {{ _drifted_categories
+    #          | reject('equalto', 'agents')
+    #          | map('extract', category_role_map)
+    #          | select('string')
+    #          | unique | list }}
 
-    - name: Map drifted agents to Day 1 roles
-      ansible.builtin.set_fact:
-        _drifted_roles_from_agents: >-
-          {{ (drift_results.categories.agents.drift_items | default([]))
-             | map(attribute='item')
-             | map('extract', agent_role_map)
-             | select('defined')
-             | unique | list }}
-      when: "'agents' in _drifted_categories"
+    # - name: Map drifted agents to Day 1 roles
+    #   ansible.builtin.set_fact:
+    #     _drifted_roles_from_agents: >-
+    #       {{ (drift_results.categories.agents.drift_items | default([]))
+    #          | map(attribute='item')
+    #          | map('extract', agent_role_map)
+    #          | select('defined')
+    #          | unique | list }}
+    #   when: "'agents' in _drifted_categories"
 
-    - name: Build role_drift list
-      ansible.builtin.set_fact:
-        _role_drift: >-
-          {{ (_drifted_roles_from_categories + (_drifted_roles_from_agents | default([])))
-             | unique
-             | map('community.general.dict_kw', role='__item__', changed=true)
-             | list }}
+    # - name: Build role_drift list
+    #   ansible.builtin.set_fact:
+    #     _role_drift: >-
+    #       {{ (_drifted_roles_from_categories + (_drifted_roles_from_agents | default([])))
+    #          | unique
+    #          | map('community.general.dict_kw', role='__item__', changed=true)
+    #          | list }}
 
-    # --- Consolidate per-host results ---
-    - name: Build consolidated per-host drift fact
-      ansible.builtin.set_fact:
-        host_drift_summary:
-          hostname: "{{ inventory_hostname }}"
-          region: "{{ region }}"
-          environment: "{{ environment }}"
-          platform: "{{ platform | default('unknown') }}"
-          scan_timestamp: "{{ ansible_date_time.iso8601 }}"
-          auto_remediate: "{{ drift_auto_remediate }}"
-          baseline_drift: "{{ drift_results }}"
-          role_drift: "{{ _role_drift }}"
-          aide_drift: "{{ aide_result is changed }}"
-          aide_severity: "{{ (aide_result is changed) | ternary('major', 'none') }}"
-          has_drift: >-
-            {{ drift_results.has_drift or aide_result is changed }}
+    # # --- Consolidate per-host results ---
+    # - name: Build consolidated per-host drift fact
+    #   ansible.builtin.set_fact:
+    #     host_drift_summary:
+    #       hostname: "{{ inventory_hostname }}"
+    #       region: "{{ region }}"
+    #       environment: "{{ environment }}"
+    #       platform: "{{ platform | default('unknown') }}"
+    #       scan_timestamp: "{{ ansible_date_time.iso8601 }}"
+    #       auto_remediate: "{{ drift_auto_remediate }}"
+    #       baseline_drift: "{{ drift_results }}"
+    #       role_drift: "{{ _role_drift }}"
+    #       aide_drift: "{{ aide_result is changed }}"
+    #       aide_severity: "{{ (aide_result is changed) | ternary('major', 'none') }}"
+    #       has_drift: >-
+    #         {{ drift_results.has_drift or aide_result is changed }}
 
 # # =========================================================================
 # # Play 2: Consolidate results — generate report, create ticket, send email
