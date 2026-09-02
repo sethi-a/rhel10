@@ -25,8 +25,8 @@
           (_svc_status.results[idx].status.ActiveState | default('unknown') != 'active' or
            _svc_status.results[idx].status.UnitFileState | default('unknown') != 'enabled') | ternary(
             [{'item': item.name, 'expected': 'active/enabled',
-              'actual': (_svc_status.results[idx].status.ActiveState | default('unknown')) + '/' + (_svc_status.results[idx].status.UnitFileState | default('unknown')),
-              'severity': item.severity}],
+              'actual': (_svc_status.results[idx].status.ActiveState | default('unknown')) + '/' + (_svc_status.results[idx].status.UnitFileState | default('unknown'))
+              }],
             []
           )
         )
@@ -55,8 +55,8 @@
           (_svc_disabled_status.results[idx].status.ActiveState | default('inactive') == 'active' or
            _svc_disabled_status.results[idx].status.UnitFileState | default('disabled') == 'enabled') | ternary(
             [{'item': item.name, 'expected': 'inactive/disabled',
-              'actual': (_svc_disabled_status.results[idx].status.ActiveState | default('unknown')) + '/' + (_svc_disabled_status.results[idx].status.UnitFileState | default('unknown')),
-              'severity': item.severity}],
+              'actual': (_svc_disabled_status.results[idx].status.ActiveState | default('unknown')) + '/' + (_svc_disabled_status.results[idx].status.UnitFileState | default('unknown'))
+              }],
             []
           )
         )
