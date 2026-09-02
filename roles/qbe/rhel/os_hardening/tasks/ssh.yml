@@ -1,6 +1,12 @@
 # roles/os_hardening/tasks/ssh.yml
 ---
-- name: Deploy SSH hardening drop-in config
+- name: Check if sshd_config.d directory exists
+  ansible.builtin.stat:
+    path: /etc/ssh/sshd_config.d
+  register: sshd_config_d
+
+- name: Deploy SSH hardening via drop-in config (RHEL 8+)
+  when: sshd_config_d.stat.isdir is defined and sshd_config_d.stat.isdir
   ansible.builtin.template:
     src: sshd_config.d/99-qbe-hardening.conf.j2
     dest: /etc/ssh/sshd_config.d/99-qbe-hardening.conf
@@ -8,5 +14,19 @@
     group: root
     mode: '0600'
     validate: "sshd -t -f %s"
+  become: true
+  notify: reload sshd
+
+- name: Deploy SSH hardening via sshd_config (RHEL 7)
+  when: sshd_config_d.stat.isdir is not defined or not sshd_config_d.stat.isdir
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?{{ item.key }}\\s"
+    line: "{{ item.key }} {{ item.value }}"
+    state: present
+    validate: "sshd -t -f %s"
+  loop: "{{ ssh_config.settings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
   become: true
   notify: reload sshd
