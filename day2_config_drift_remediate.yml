@@ -1,57 +1,79 @@
 # playbooks/d2_drift_remediate.yml
 # =============================================================================
 # Auto-remediation for non-prod hosts with minor/moderate drift.
-# Runs AFTER d2_drift_detect.yml in the AAP workflow.
-# Uses host_drift_summary.role_drift (built by detect playbook) to determine
-# which Day 1 roles to re-run.
+# Self-contained — runs baseline_check first to detect current drift,
+# then remediates and re-scans to verify.
 #
 # Category-to-role mappings are defined in group_vars/all/rhel10_remediation.yml.
 # To add/change a mapping, edit that file — no playbook changes needed.
 # =============================================================================
 ---
 # =========================================================================
-# Play 1: Remediate drifted non-prod hosts
+# Play 1: Detect drift and remediate
 # =========================================================================
 - name: "Day 2 -- Drift Auto-Remediation"
   hosts: "{{ target_hosts | default('all') }}"
   become: true
   serial: "{{ remediate_serial | default('10%') }}"
   gather_facts: true
+  ignore_unreachable: true
   vars:
     drift_auto_remediate: >-
       {{ hostvars[inventory_hostname].drift_auto_remediate
          | default(environment != 'prod') }}
-    _role_drift: >-
-      {{ hostvars[inventory_hostname].host_drift_summary.role_drift | default([]) }}
-    _drifted_role_names: >-
-      {{ _role_drift | selectattr('changed', 'equalto', true) | map(attribute='role') | list }}
 
   tasks:
-    # Gate: check if this host qualifies for auto-remediation
+    # --- Step 1: Detect current drift ---
+    - name: Run baseline check to detect current drift
+      ansible.builtin.include_role:
+        name: baseline_check
+
+    # --- Step 2: Map drift to roles ---
+    - name: Identify drifted categories
+      ansible.builtin.set_fact:
+        _drifted_categories: >-
+          {{ drift_results.categories | dict2items
+             | selectattr('value.status', 'equalto', 'drifted')
+             | map(attribute='key') | list }}
+
+    - name: Map drifted categories to Day 1 roles
+      ansible.builtin.set_fact:
+        _drifted_role_names: >-
+          {{ _drifted_categories
+             | reject('equalto', 'agents')
+             | map('extract', category_role_map)
+             | select('string')
+             | unique | list }}
+
+    # --- Step 3: Check eligibility ---
     - name: Evaluate remediation eligibility
       ansible.builtin.set_fact:
         _eligible: >-
           {{ drift_auto_remediate | bool
              and environment != 'prod'
-             and (hostvars[inventory_hostname].host_drift_summary.has_drift | default(false) | bool)}}
-             
+             and drift_results.has_drift | bool
+          }}
+        _pre_drift_count: "{{ drift_results.total_drift }}"
 
     - name: Skip ineligible hosts
       ansible.builtin.debug:
-        msg: "Skipping {{ inventory_hostname }} — not eligible for auto-remediation"
+        msg: >-
+          Skipping {{ inventory_hostname }} —
+          {% if not drift_auto_remediate | bool %}auto-remediate disabled
+          {% elif environment == 'prod' %}production host
+          {% elif not drift_results.has_drift | bool %}no drift detected
+          {% else %}not eligible{% endif %}
       when: not _eligible | bool
 
+    # --- Step 4: Remediate ---
     - name: Run auto-remediation
       when: _eligible | bool
       block:
         - name: Log remediation start
           ansible.builtin.debug:
             msg: >-
-              Starting auto-remediation for {{ inventory_hostname }}
-              ({{ environment }}/{{ region }}).
-              Drifted roles: {{ _drifted_role_names | join(', ') }}
-
-        # --- Re-run drifted Day 1 roles in enforce mode ---
+              Remediating {{ inventory_hostname }} — {{ _drifted_role_names | length }} roles:
+              {{ _drifted_role_names | join(', ') }}
 
         - name: Remediate baseline packages
           ansible.builtin.include_role:
@@ -98,8 +120,6 @@
             name: mounts_enforce
           when: "'mounts_enforce' in _drifted_role_names"
 
-        # --- Agent-specific remediation ---
-
         - name: Remediate Qualys agent
           ansible.builtin.include_role:
             name: qualys_install
@@ -135,7 +155,7 @@
             name: snow_discovery_install
           when: "'snow_discovery_install' in _drifted_role_names"
 
-        # --- Post-remediation verification scan ---
+        # --- Step 5: Re-scan to verify ---
         - name: Re-run baseline check after remediation
           ansible.builtin.include_role:
             name: baseline_check
@@ -148,10 +168,8 @@
               region: "{{ region }}"
               roles_remediated: "{{ _drifted_role_names }}"
               post_scan_clean: "{{ not (drift_results.has_drift | default(false)) }}"
-              pre_drift_count: >-
-                {{ hostvars[inventory_hostname].host_drift_summary.baseline_drift.total_drift | default(0) }}
+              pre_drift_count: "{{ _pre_drift_count }}"
               post_drift_count: "{{ drift_results.total_drift | default(0) }}"
-              timestamp: "{{ ansible_date_time.iso8601 }}"
 
 # =========================================================================
 # Play 2: Report remediation outcome
@@ -164,25 +182,25 @@
       {{ ansible_play_hosts_all
          | map('extract', hostvars, 'remediation_result')
          | select('defined') | list }}
-    successful_remediations: >-
+    successful: >-
       {{ remediated_hosts | selectattr('post_scan_clean', 'equalto', true) | list }}
-    failed_remediations: >-
+    failed: >-
       {{ remediated_hosts | rejectattr('post_scan_clean', 'equalto', true) | list }}
+
   tasks:
-    - name: Log remediation summary
+    - name: Print remediation summary
       ansible.builtin.debug:
         msg:
-          - "Remediated: {{ remediated_hosts | length }} | Success: {{ successful_remediations | length }} | Failed: {{ failed_remediations | length }}"
+          - "Remediated: {{ remediated_hosts | length }} | Success: {{ successful | length }} | Failed: {{ failed | length }}"
       run_once: true
       delegate_to: localhost
 
-    - name: Pass remediation results to workflow
+    - name: Store remediation results as workflow artifact
       ansible.builtin.set_stats:
         data:
           remediation_total: "{{ remediated_hosts | length }}"
-          remediation_successful: "{{ successful_remediations | length }}"
-          remediation_failed: "{{ failed_remediations | length }}"
-          remediation_failed_hosts: >-
-            {{ failed_remediations | map(attribute='hostname') | list }}
+          remediation_successful: "{{ successful | length }}"
+          remediation_failed: "{{ failed | length }}"
+          remediation_results: "{{ remediated_hosts }}"
       run_once: true
       delegate_to: localhost
