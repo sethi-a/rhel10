@@ -17,7 +17,25 @@
       total_drift: 0
       max_severity: "none"
       has_drift: false
-
+    _pkg_drift: []
+    _svc_drift: []
+    _kernel_drift: []
+    _file_drift: []
+    _selinux_drift: []
+    _mount_drift: []
+    _firewall_drift: []
+    _agent_drift: []
+    _ssh_drift: []
+    _pam_drift: []
+    _login_defs_drift: []
+    _banner_drift: []
+    _cron_drift: []
+    _audit_rules_drift: []
+    _auditd_drift: []
+    _rsyslog_drift: []
+    _chrony_drift: []
+    _dns_drift: []
+    
 - name: Run SELinux checks
   ansible.builtin.include_tasks: check_selinux.yml
 

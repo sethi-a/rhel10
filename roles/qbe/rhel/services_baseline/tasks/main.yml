@@ -1,0 +1,26 @@
+# roles/services_baseline/tasks/main.yml
+# Ensures all baseline services are in the correct state:
+#   enabled services  → running + enabled
+#   disabled services → stopped + disabled
+---
+- name: Enable and start required services
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+    enabled: true
+    state: started
+  loop: "{{ services.enabled | default([]) + services_platform_enabled | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  become: true
+  ignore_errors: true
+
+- name: Disable and stop prohibited services
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+    enabled: false
+    state: stopped
+  loop: "{{ services.disabled | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  become: true
+  ignore_errors: true
