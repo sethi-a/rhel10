@@ -27,11 +27,11 @@
 # - name: Run service checks
 #   ansible.builtin.include_tasks: check_services.yml
 
-# - name: Run kernel parameter checks
-#   ansible.builtin.include_tasks: check_kernel_params.yml
+- name: Run kernel parameter checks
+  ansible.builtin.include_tasks: check_kernel_params.yml
 
-# - name: Run file permission checks
-#   ansible.builtin.include_tasks: check_file_permissions.yml
+- name: Run file permission checks
+  ansible.builtin.include_tasks: check_file_permissions.yml
 
 # - name: Run filesystem mount checks
 #   ansible.builtin.include_tasks: check_mounts.yml
@@ -51,8 +51,8 @@
 # - name: Run login.defs checks
 #   ansible.builtin.include_tasks: check_login_defs.yml
 
-# - name: Run banner checks
-#   ansible.builtin.include_tasks: check_banners.yml
+- name: Run banner checks
+  ansible.builtin.include_tasks: check_banners.yml
 
 # - name: Run cron/at access checks
 #   ansible.builtin.include_tasks: check_cron_access.yml
