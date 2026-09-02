@@ -21,8 +21,7 @@
             [{'item': 'banners.' + item.path,
               'expected': 'contains "' + item.content_pattern + '"',
               'actual': (_banner_contents.results[idx].content is defined)
-                        | ternary('content mismatch', 'file missing'),
-              'severity': banners.severity}],
+                        | ternary('content mismatch', 'file missing')}],
             []
           )
         )
