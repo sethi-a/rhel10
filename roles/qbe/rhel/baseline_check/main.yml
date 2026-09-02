@@ -17,6 +17,9 @@
       max_severity: "none"
       has_drift: false
 
+- name: Run SELinux checks
+  ansible.builtin.include_tasks: check_selinux.yml
+  
 # - name: Run package checks
 #   ansible.builtin.include_tasks: check_packages.yml
 
@@ -28,9 +31,6 @@
 
 # - name: Run file permission checks
 #   ansible.builtin.include_tasks: check_file_permissions.yml
-
-- name: Run SELinux checks
-  ansible.builtin.include_tasks: check_selinux.yml
 
 # - name: Run filesystem mount checks
 #   ansible.builtin.include_tasks: check_mounts.yml
