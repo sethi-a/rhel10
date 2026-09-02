@@ -3,14 +3,14 @@
 - name: Apply kernel/sysctl hardening
   ansible.builtin.include_tasks: sysctl.yml
 
-# - name: Configure nftables firewall
-#   ansible.builtin.include_tasks: firewall.yml
+- name: Configure nftables firewall
+  ansible.builtin.include_tasks: firewall.yml
 
-# - name: Apply SSH hardening
-#   ansible.builtin.include_tasks: ssh.yml
+- name: Apply SSH hardening
+  ansible.builtin.include_tasks: ssh.yml
 
-# - name: Verify SELinux enforcement
-#   ansible.builtin.include_tasks: selinux.yml
+- name: Verify SELinux enforcement
+  ansible.builtin.include_tasks: selinux.yml
 
 # - name: Configure AIDE integrity monitoring
 #   ansible.builtin.include_tasks: aide.yml

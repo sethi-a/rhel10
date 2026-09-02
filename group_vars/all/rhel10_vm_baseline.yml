@@ -650,31 +650,7 @@ firewall:
       protocol: tcp
       source: "{{ monitoring_subnet }}"
       description: "Prometheus node_exporter"
-  allowed_outbound:
-    - port: 443
-      protocol: tcp
-      destination: "{{ satellite_servers[region][platform] }}"
-      description: "Satellite registration and content"
-    - port: 8443
-      protocol: tcp
-      destination: "{{ illumio_pce[region] }}"
-      description: "Illumio PCE communication"
-    - port: 443
-      protocol: tcp
-      destination: "{{ qualys_server[region] }}"
-      description: "Qualys Cloud Agent"
-    - port: 443
-      protocol: tcp
-      destination: "{{ dynatrace_server[region] }}"
-      description: "Dynatrace OneAgent"
-    - port: 443
-      protocol: tcp
-      destination: "{{ bigfix_server[region] }}"
-      description: "BigFix relay"
-    - port: 443
-      protocol: tcp
-      destination: "{{ snow_discovery_server[region] }}"
-      description: "SNOW Discovery"
+  allowed_outbound:    
     - port: 514
       protocol: tcp
       destination: "{{ syslog_server[region] }}"
