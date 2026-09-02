@@ -83,29 +83,37 @@
   gather_facts: true
   connection: local
   vars:
-    scan_targets: "{{ groups[target_hosts | default('all')] }}"
-    all_results: >-
-      {{ scan_targets | map('extract', hostvars, 'host_drift_summary') | list }}
-    drifted_hosts: >-
-      {{ all_results | selectattr('has_drift', 'equalto', true) | list }}
-    clean_hosts: >-
-      {{ all_results | rejectattr('has_drift', 'equalto', true) | list }}
-    total_scanned: "{{ scan_targets | length }}"
-    total_drifted: "{{ drifted_hosts | length }}"
-    total_clean: "{{ clean_hosts | length }}"
-    drift_percentage: >-
-      {{ ((total_drifted | int / total_scanned | int) * 100) | round(1) }}
-    # Per-environment breakdown
-    env_summary: >-
-      {{
-        all_results | groupby('environment') | items2dict(
-          key_name=0, value_name=1
-        )
-      }}
     report_filename: "drift-report-{{ ansible_date_time.date }}.html"
     report_path: "/tmp/{{ report_filename }}"
 
   tasks:
+    # Build list of hosts from Play 1
+    - name: Collect hosts that ran in Play 1
+      ansible.builtin.set_fact:
+        scan_targets: >-
+          {{ groups.get(target_hosts | default('all'), groups['all']) }}
+        all_results: >-
+          {{ groups.get(target_hosts | default('all'), groups['all'])
+             | map('extract', hostvars, 'host_drift_summary')
+             | list }}
+
+    - name: Set consolidation facts
+      ansible.builtin.set_fact:
+        drifted_hosts: >-
+          {{ all_results | selectattr('has_drift', 'equalto', true) | list }}
+        clean_hosts: >-
+          {{ all_results | rejectattr('has_drift', 'equalto', true) | list }}
+        total_scanned: "{{ all_results | length }}"
+        total_drifted: "{{ (all_results | selectattr('has_drift', 'equalto', true) | list) | length }}"
+        total_clean: "{{ (all_results | rejectattr('has_drift', 'equalto', true) | list) | length }}"
+
+    - name: Calculate drift percentage
+      ansible.builtin.set_fact:
+        drift_percentage: >-
+          {{ ((total_drifted | int / total_scanned | int) * 100) | round(1) if total_scanned | int > 0 else 0 }}
+        env_summary: >-
+          {{ all_results | groupby('environment') | items2dict(key_name=0, value_name=1) }}
+          
     - name: Generate HTML drift report
       ansible.builtin.template:
         src: "{{ playbook_dir }}/templates/drift_report.html.j2"
