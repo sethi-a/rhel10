@@ -157,7 +157,7 @@
 # Play 2: Report remediation outcome
 # =========================================================================
 - name: "Day 2 -- Drift Remediation Report"
-  hosts: "{{ target_hosts | default('rhel10_all') }}"
+  hosts: "{{ target_hosts | default('all') }}"
   gather_facts: true
   vars:
     remediated_hosts: >-
