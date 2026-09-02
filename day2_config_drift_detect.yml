@@ -8,14 +8,14 @@
   become: true
   serial: "{{ detect_serial | default('20%') }}"
   gather_facts: true
-  # vars:
-  #   drift_auto_remediate: >-
-  #     {{ hostvars[inventory_hostname].drift_auto_remediate
-  #        | default(environment != 'prod') }}
+  vars:
+    drift_auto_remediate: >-
+      {{ hostvars[inventory_hostname].drift_auto_remediate
+         | default(environment != 'prod') }}
 
   tasks:
     # --- Baseline comparison (packages, services, sysctl, SSH, PAM, etc.) ---
-    - name: Run baseline comparison checks2
+    - name: Run baseline comparison checks
       ansible.builtin.include_role:
         name: baseline_check
 

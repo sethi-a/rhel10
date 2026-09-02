@@ -3,27 +3,23 @@
 # automatically from group_vars/ by Ansible's variable precedence.
 # No manual include_vars or combine() is needed.
 ---
-
-- name: test debug
-  ansible.builtin.debug:
-    msg: "test message"
     
-# - name: Initialise drift results structure
-#   ansible.builtin.set_fact:
-#     drift_results:
-#       hostname: "{{ inventory_hostname }}"
-#       region: "{{ region }}"
-#       environment: "{{ environment }}"
-#       scan_timestamp: "{{ ansible_date_time.iso8601 }}"
-#       baseline_version: "{{ baseline_version }}"
-#       categories: {}
-#       total_checks: 0
-#       total_drift: 0
-#       max_severity: "none"
-#       has_drift: false
+- name: Initialise drift results structure
+  ansible.builtin.set_fact:
+    drift_results:
+      hostname: "{{ inventory_hostname }}"
+      region: "{{ region }}"
+      environment: "{{ environment }}"
+      scan_timestamp: "{{ ansible_date_time.iso8601 }}"
+      baseline_version: "{{ baseline_version }}"
+      categories: {}
+      total_checks: 0
+      total_drift: 0
+      max_severity: "none"
+      has_drift: false
 
-# - name: Run SELinux checks
-#   ansible.builtin.include_tasks: check_selinux.yml
+- name: Run SELinux checks
+  ansible.builtin.include_tasks: check_selinux.yml
 
 # - name: Run package checks
 #   ansible.builtin.include_tasks: check_packages.yml
@@ -76,28 +72,16 @@
 # - name: Run DNS resolver checks
 #   ansible.builtin.include_tasks: check_dns.yml
 
-# - name: Calculate overall drift summary
-#   ansible.builtin.set_fact:
-#     drift_results: >-
-#       {{
-#         drift_results | combine({
-#           'total_checks': drift_results.categories.values()
-#             | map(attribute='checks') | map('length') | sum,
-#           'total_drift': drift_results.categories.values()
-#             | map(attribute='drift_items') | map('length') | sum,
-#           'has_drift': drift_results.categories.values()
-#             | map(attribute='drift_items') | map('length') | sum > 0
-#         })
-#       }}
-#   vars:
-#     _severity_rank:
-#       minor: 1
-#       moderate: 2
-#       major: 3
-#       critical: 4
-#     _severity_order:
-#       0: "none"
-#       1: "minor"
-#       2: "moderate"
-#       3: "major"
-#       4: "critical"
+- name: Calculate overall drift summary
+  ansible.builtin.set_fact:
+    drift_results: >-
+      {{
+        drift_results | combine({
+          'total_checks': drift_results.categories.values()
+            | map(attribute='checks') | map('length') | sum,
+          'total_drift': drift_results.categories.values()
+            | map(attribute='drift_items') | map('length') | sum,
+          'has_drift': drift_results.categories.values()
+            | map(attribute='drift_items') | map('length') | sum > 0
+        })
+      }}
