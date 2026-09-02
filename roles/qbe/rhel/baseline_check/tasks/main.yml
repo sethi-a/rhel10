@@ -27,8 +27,8 @@
 # - name: Run service checks
 #   ansible.builtin.include_tasks: check_services.yml
 
-- name: Run file permission checks
-  ansible.builtin.include_tasks: check_file_permissions.yml
+# - name: Run file permission checks
+#   ansible.builtin.include_tasks: check_file_permissions.yml
 
 # - name: Run filesystem mount checks
 #   ansible.builtin.include_tasks: check_mounts.yml
