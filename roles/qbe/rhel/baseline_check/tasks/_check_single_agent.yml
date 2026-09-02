@@ -11,6 +11,7 @@
   check_mode: true
   changed_when: false
   ignore_errors: true
+  when: agent_item.value.service is defined
 
 - name: "Run {{ agent_item.key }} validation command"
   ansible.builtin.command:
@@ -27,15 +28,17 @@
       {{
         _agent_drift | default([]) +
         (
-          (agent_item.value.package not in ansible_facts.packages) | ternary(
+          (agent_item.value.package is defined and
+           agent_item.value.package not in ansible_facts.packages) | ternary(
             [{'item': agent_item.key + ' (package)', 'expected': 'installed',
-              'actual': 'missing'}],
+              'actual': 'missing', 'severity': agent_item.value.severity | default('moderate')}],
             []
           )
         ) + (
-          (_agent_svc.status.ActiveState | default('unknown') != 'active') | ternary(
+          (agent_item.value.service is defined and
+           _agent_svc.status.ActiveState | default('unknown') != 'active') | ternary(
             [{'item': agent_item.key + ' (service)', 'expected': 'active',
-              'actual': _agent_svc.status.ActiveState | default('unknown')}],
+              'actual': _agent_svc.status.ActiveState | default('unknown')],
             []
           )
         ) + (
