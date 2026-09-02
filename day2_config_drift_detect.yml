@@ -117,6 +117,7 @@
     total_drifted: "{{ drifted_hosts | length }}"
     total_clean: "{{ clean_hosts | length }}"
     report_path: "/tmp/drift-report-{{ ansible_date_time.date }}.html"
+    report_filename: "drift-report-{{ ansible_date_time.date }}.html"
 
   tasks:
     - name: Generate HTML drift report
