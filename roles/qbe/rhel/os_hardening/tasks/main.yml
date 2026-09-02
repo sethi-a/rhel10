@@ -3,20 +3,20 @@
 - name: Apply kernel/sysctl hardening
   ansible.builtin.include_tasks: sysctl.yml
 
-- name: Configure nftables firewall
-  ansible.builtin.include_tasks: firewall.yml
+# - name: Configure nftables firewall
+#   ansible.builtin.include_tasks: firewall.yml
 
 - name: Apply SSH hardening
   ansible.builtin.include_tasks: ssh.yml
 
-# - name: Verify SELinux enforcement
-#   ansible.builtin.include_tasks: selinux.yml
+- name: Verify SELinux enforcement
+  ansible.builtin.include_tasks: selinux.yml
 
-# - name: Deploy login banners
-#   ansible.builtin.include_tasks: banners.yml
+- name: Deploy login banners
+  ansible.builtin.include_tasks: banners.yml
 
-# - name: Enforce cron/at access controls
-#   ansible.builtin.include_tasks: cron_access.yml
+- name: Enforce cron/at access controls
+  ansible.builtin.include_tasks: cron_access.yml
 
-# - name: Enforce critical file permissions
-#   ansible.builtin.include_tasks: file_permissions.yml
+- name: Enforce critical file permissions
+  ansible.builtin.include_tasks: file_permissions.yml
