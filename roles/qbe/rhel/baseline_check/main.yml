@@ -3,23 +3,28 @@
 # automatically from group_vars/ by Ansible's variable precedence.
 # No manual include_vars or combine() is needed.
 ---
-- name: Initialise drift results structure
-  ansible.builtin.set_fact:
-    drift_results:
-      hostname: "{{ inventory_hostname }}"
-      region: "{{ region }}"
-      environment: "{{ environment }}"
-      scan_timestamp: "{{ ansible_date_time.iso8601 }}"
-      baseline_version: "{{ baseline_version }}"
-      categories: {}
-      total_checks: 0
-      total_drift: 0
-      max_severity: "none"
-      has_drift: false
 
-- name: Run SELinux checks
-  ansible.builtin.include_tasks: check_selinux.yml
-  
+- name: test debug
+  ansible.builtin.debug:
+    msg: "test message"
+    
+# - name: Initialise drift results structure
+#   ansible.builtin.set_fact:
+#     drift_results:
+#       hostname: "{{ inventory_hostname }}"
+#       region: "{{ region }}"
+#       environment: "{{ environment }}"
+#       scan_timestamp: "{{ ansible_date_time.iso8601 }}"
+#       baseline_version: "{{ baseline_version }}"
+#       categories: {}
+#       total_checks: 0
+#       total_drift: 0
+#       max_severity: "none"
+#       has_drift: false
+
+# - name: Run SELinux checks
+#   ansible.builtin.include_tasks: check_selinux.yml
+
 # - name: Run package checks
 #   ansible.builtin.include_tasks: check_packages.yml
 
