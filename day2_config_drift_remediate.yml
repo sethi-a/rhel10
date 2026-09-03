@@ -46,10 +46,15 @@
              | unique | list }}
 
     # --- Step 3: Check eligibility ---
+    - name: Check if host is in remediation_exclude group
+      ansible.builtin.set_fact:
+        _excluded: "{{ inventory_hostname in groups.get('remediation_exclude', []) }}"
+
     - name: Evaluate remediation eligibility
       ansible.builtin.set_fact:
         _eligible: >-
-          {{ drift_auto_remediate | bool
+          {{ not _excluded | bool
+             and drift_auto_remediate | bool
              and environment != 'prod'
              and drift_results.has_drift | bool
           }}
@@ -59,11 +64,32 @@
       ansible.builtin.debug:
         msg: >-
           Skipping {{ inventory_hostname }} —
-          {% if not drift_auto_remediate | bool %}auto-remediate disabled
+          {% if _excluded | bool %}in remediation_exclude group
+          {% elif not drift_auto_remediate | bool %}auto-remediate disabled
           {% elif environment == 'prod' %}production host
           {% elif not drift_results.has_drift | bool %}no drift detected
           {% else %}not eligible{% endif %}
       when: not _eligible | bool
+
+    - name: Record skipped host result
+      when: not _eligible | bool
+      ansible.builtin.set_fact:
+        remediation_result:
+          hostname: "{{ inventory_hostname }}"
+          environment: "{{ environment }}"
+          region: "{{ region }}"
+          excluded: "{{ _excluded | bool }}"
+          skipped: true
+          skip_reason: >-
+            {% if _excluded | bool %}remediation_exclude group
+            {% elif not drift_auto_remediate | bool %}auto-remediate disabled
+            {% elif environment == 'prod' %}production host
+            {% elif not drift_results.has_drift | bool %}no drift detected
+            {% else %}not eligible{% endif %}
+          roles_remediated: []
+          post_scan_clean: "{{ not (drift_results.has_drift | default(false)) }}"
+          pre_drift_count: "{{ drift_results.total_drift | default(0) }}"
+          post_drift_count: "{{ drift_results.total_drift | default(0) }}"
 
     # --- Step 4: Remediate ---
     - name: Run auto-remediation
@@ -100,7 +126,7 @@
             name: snow_discovery_install
           when: "'snow_discovery_install' in _drifted_role_names"
 
-        # --- Step 5: Re-scan to verify ---
+         # --- Step 5: Re-scan to verify ---
         - name: Re-run baseline check after remediation
           ansible.builtin.include_role:
             name: baseline_check
@@ -111,6 +137,7 @@
               hostname: "{{ inventory_hostname }}"
               environment: "{{ environment }}"
               region: "{{ region }}"
+              excluded: false
               roles_remediated: "{{ _drifted_role_names }}"
               post_scan_clean: "{{ not (drift_results.has_drift | default(false)) }}"
               pre_drift_count: "{{ _pre_drift_count }}"
@@ -123,10 +150,16 @@
   hosts: "{{ target_hosts | default('all') }}"
   gather_facts: true
   vars:
-    remediated_hosts: >-
+    all_results: >-
       {{ ansible_play_hosts_all
          | map('extract', hostvars, 'remediation_result')
          | select('defined') | list }}
+    remediated_hosts: >-
+      {{ all_results | rejectattr('skipped', 'defined') | list }}
+    skipped_hosts: >-
+      {{ all_results | selectattr('skipped', 'defined') | rejectattr('excluded', 'equalto', true) | list }}
+    excluded_hosts: >-
+      {{ all_results | selectattr('excluded', 'equalto', true) | list }}
     successful: >-
       {{ remediated_hosts | selectattr('post_scan_clean', 'equalto', true) | list }}
     failed: >-
@@ -137,6 +170,8 @@
       ansible.builtin.debug:
         msg:
           - "Remediated: {{ remediated_hosts | length }} | Success: {{ successful | length }} | Failed: {{ failed | length }}"
+          - "Skipped: {{ skipped_hosts | length }} | Excluded: {{ excluded_hosts | length }}"
+          - "{% if excluded_hosts | length > 0 %}Excluded hosts: {{ excluded_hosts | map(attribute='hostname') | join(', ') }}{% endif %}"
       run_once: true
       delegate_to: localhost
 
@@ -146,6 +181,8 @@
           remediation_total: "{{ remediated_hosts | length }}"
           remediation_successful: "{{ successful | length }}"
           remediation_failed: "{{ failed | length }}"
-          remediation_results: "{{ remediated_hosts }}"
+          remediation_skipped: "{{ skipped_hosts | length }}"
+          remediation_excluded: "{{ excluded_hosts | length }}"
+          remediation_results: "{{ all_results }}"
       run_once: true
       delegate_to: localhost
