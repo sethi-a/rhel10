@@ -38,29 +38,26 @@
           ansible.builtin.set_fact:
             _drifted_roles_from_categories: >-
               {{ _drifted_categories
-                 | reject('equalto', 'agents')
-                 | map('extract', category_role_map)
-                 | select('string')
-                 | unique | list }}
+                | reject('equalto', 'agents')
+                | map('extract', category_role_map)
+                | select('string')
+                | unique | list }}
 
         - name: Map drifted agents to Day 1 roles
           ansible.builtin.set_fact:
             _drifted_roles_from_agents: >-
               {{ (drift_results.categories.agents.drift_items | default([]))
-                 | map(attribute='item')
-                 | map('extract', agent_role_map)
-                 | select('defined')
-                 | unique | list }}
+                | map(attribute='item')
+                | map('extract', agent_role_map)
+                | select('defined')
+                | unique | list }}
           when: "'agents' in _drifted_categories"
 
-        - name: Build role_drift list
+        - name: Combine category and agent roles
           ansible.builtin.set_fact:
-            _role_drift: []
-
-        - name: Add roles to drift list
-          ansible.builtin.set_fact:
-            _role_drift: "{{ _role_drift + [{'role': item, 'changed': true}] }}"
-          loop: "{{ (_drifted_roles_from_categories + (_drifted_roles_from_agents | default([]))) | unique }}"
+            _drifted_role_names: >-
+              {{ (_drifted_roles_from_categories + (_drifted_roles_from_agents | default([])))
+                | unique | list }}
 
         # --- Consolidate per-host results ---
         - name: Build consolidated per-host drift fact

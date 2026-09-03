@@ -28,22 +28,30 @@
       ansible.builtin.include_role:
         name: baseline_check
 
-    # --- Step 2: Map drift to roles ---
-    - name: Identify drifted categories
-      ansible.builtin.set_fact:
-        _drifted_categories: >-
-          {{ drift_results.categories | dict2items
-             | selectattr('value.status', 'equalto', 'drifted')
-             | map(attribute='key') | list }}
-
     - name: Map drifted categories to Day 1 roles
       ansible.builtin.set_fact:
-        _drifted_role_names: >-
+        _drifted_roles_from_categories: >-
           {{ _drifted_categories
-             | reject('equalto', 'agents')
-             | map('extract', category_role_map)
-             | select('string')
-             | unique | list }}
+            | reject('equalto', 'agents')
+            | map('extract', category_role_map)
+            | select('string')
+            | unique | list }}
+
+    - name: Map drifted agents to Day 1 roles
+      ansible.builtin.set_fact:
+        _drifted_roles_from_agents: >-
+          {{ (drift_results.categories.agents.drift_items | default([]))
+            | map(attribute='item')
+            | map('extract', agent_role_map)
+            | select('defined')
+            | unique | list }}
+      when: "'agents' in _drifted_categories"
+
+    - name: Combine category and agent roles
+      ansible.builtin.set_fact:
+        _drifted_role_names: >-
+          {{ (_drifted_roles_from_categories + (_drifted_roles_from_agents | default([])))
+            | unique | list }}
 
     # --- Step 3: Check eligibility ---
     - name: Check if host is in remediation_exclude group
