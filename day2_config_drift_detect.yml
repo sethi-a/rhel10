@@ -48,6 +48,8 @@
             _drifted_roles_from_agents: >-
               {{ (drift_results.categories.agents.drift_items | default([]))
                 | map(attribute='item')
+                | map('regex_replace', ' \(.*\)$', '')
+                | unique
                 | map('extract', agent_role_map)
                 | select('defined')
                 | unique | list }}
