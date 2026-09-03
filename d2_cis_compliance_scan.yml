@@ -127,33 +127,4 @@
       register: snow_cis_ticket
       no_log: true
 
-    - name: Send consolidated CIS compliance summary email
-      ansible.builtin.include_role:
-        name: qbe.common.ops_notify
-      vars:
-        ops_notify_subject: >-
-          CIS Compliance Scan — {{ total_failed }}/{{ total_scanned }}
-          non-compliant — avg {{ avg_score }}% — {{ ansible_date_time.date }}
-        ops_notify_body: |
-          CIS Level 1 Compliance Scan Summary
-          =====================================
-          Scan Date: {{ ansible_date_time.iso8601 }}
-          Total Hosts Scanned: {{ total_scanned }}
-          Hosts Passed: {{ total_passed }}
-          Hosts Failed: {{ total_failed }}
-          Fleet Average Score: {{ avg_score }}%
-          {% if snow_cis_ticket is defined and snow_cis_ticket is not skipped %}
-          ServiceNow Ticket: {{ snow_cis_ticket.record.number }}
-          {% endif %}
-
-          {% if total_failed | int > 0 %}
-          Non-Compliant Hosts:
-          {% for host in failed_hosts %}
-            - {{ host.hostname }} ({{ host.region }}/{{ host.environment }}) — {{ host.score }}%
-          {% endfor %}
-          {% endif %}
-
-          {% if total_passed | int > 0 %}
-          Compliant Hosts: {{ passed_hosts | map(attribute='hostname') | join(', ') }}
-          {% endif %}
-        ops_notify_recipients: "{{ ops_email.values() | flatten | unique | list }}"
+    
