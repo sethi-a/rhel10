@@ -70,7 +70,7 @@
               scan_timestamp: "{{ ansible_date_time.iso8601 }}"
               auto_remediate: "{{ drift_auto_remediate }}"
               baseline_drift: "{{ drift_results }}"
-              role_drift: "{{ _role_drift }}"
+              role_drift: "{{ _drifted_role_names }}"
               has_drift: "{{ drift_results.has_drift | default(false) | bool }}"
 
       rescue:
