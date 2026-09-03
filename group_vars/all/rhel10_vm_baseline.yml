@@ -15,11 +15,6 @@
 #   - Region endpoints:      Defined in group_vars/all/infrastructure.yml (keyed by region)
 #   - Ansible merges group_vars automatically via variable precedence.
 #
-# Severity levels (optional — can be added per-item when classification is needed):
-#   critical — Security incident raised; immediate investigation required
-#   major    — ServiceNow change request; remediate within 24 hours
-#   moderate — ServiceNow change request; remediate within 72 hours
-#   minor    — Logged in drift report; remediate at next maintenance window
 # =============================================================================
 ---
 baseline_version: "1.0.0"
@@ -747,6 +742,5 @@ dns:
 # =============================================================================
 # Controlled per-environment via overrides; base default is false (safe)
 drift_auto_remediate: false
-drift_remediate_max_severity: moderate
 drift_remediate_exclude_categories:
   - aide

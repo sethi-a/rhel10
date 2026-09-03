@@ -18,13 +18,11 @@
       {{
         _pkg_drift | default([]) + (
           (item.name not in ansible_facts.packages) | ternary(
-            [{'item': item.name, 'expected': 'present',
-              'actual': 'absent', 'severity': item.severity}],
+            [{'item': item.name, 'expected': 'present'}],
             (item.version is not none and
              item.version | string != ansible_facts.packages[item.name][0].version | string) | ternary(
               [{'item': item.name, 'expected': 'version ' + (item.version | string),
-                'actual': 'version ' + ansible_facts.packages[item.name][0].version,
-                'severity': item.severity}],
+                'actual': 'version ' + ansible_facts.packages[item.name][0].version}],
               []
             )
           )
@@ -40,8 +38,7 @@
       {{
         _pkg_drift | default([]) + (
           (item.name in ansible_facts.packages) | ternary(
-            [{'item': item.name, 'expected': 'absent',
-              'actual': 'present', 'severity': item.severity}],
+            [{'item': item.name, 'expected': 'absent'}],
             []
           )
         )

@@ -15,7 +15,6 @@
       categories: {}
       total_checks: 0
       total_drift: 0
-      max_severity: "none"
       has_drift: false
     _pkg_drift: []
     _svc_drift: []

@@ -37,12 +37,6 @@ pam:
     unlock_time: 300
     fail_interval: 300
 
-# --- Lower agent severity ---
-agents:
-  qualys:
-  illumio:
-  defender:
-
 # --- CIS: lower threshold ---
 cis_profile:
   minimum_score: 90.0

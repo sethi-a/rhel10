@@ -30,8 +30,7 @@
       {{
         ((_chrony_svc.status.ActiveState | default('unknown') != 'active') | ternary(
           [{'item': 'chrony.service', 'expected': 'active',
-            'actual': _chrony_svc.status.ActiveState | default('unknown'),
-            'severity': chrony.severity}], []
+            'actual': _chrony_svc.status.ActiveState | default('unknown')}], []
         ))
       }}
 
@@ -43,8 +42,7 @@
           (_chrony_conf.stdout | default('') is not search(item)) | ternary(
             [{'item': 'chrony.ntp_server.' + item,
               'expected': 'configured',
-              'actual': 'not found in chrony.conf',
-              'severity': chrony.severity}],
+              'actual': 'not found in chrony.conf'}],
             []
           )
         )

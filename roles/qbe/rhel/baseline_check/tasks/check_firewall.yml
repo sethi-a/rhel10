@@ -22,14 +22,12 @@
       {{
         (_nft_service.status.ActiveState | default('') != 'active') | ternary(
           [{'item': 'nftables service', 'expected': 'active',
-            'actual': _nft_service.status.ActiveState | default('unknown'),
-            'severity': firewall.severity}],
+            'actual': _nft_service.status.ActiveState | default('unknown')}],
           (firewall.allowed_inbound | map(attribute='port') | map('string')
            | difference(_nft_ruleset.stdout_lines | select('search', 'dport') | map('regex_search', '\\d+') | select('string') | list)
            | length > 0) | ternary(
             [{'item': 'nftables inbound rules', 'expected': 'all baseline rules present',
-              'actual': 'missing rules detected',
-              'severity': firewall.severity}],
+              'actual': 'missing rules detected'}],
             []
           )
         )
