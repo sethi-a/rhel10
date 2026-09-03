@@ -1,0 +1,11 @@
+---
+region: NA
+
+satellite_server:
+  azure: "satellite-na-az.qbe.com"
+  vcenter: "satellite-na-vc.qbe.com"
+
+satellite_activation_key:
+  dev: "rhel10-dev-na"
+  test: "rhel10-test-na"
+  prod: "rhel10-prod-na"

@@ -1,0 +1,11 @@
+---
+region: EU
+
+satellite_server:
+  azure: "satellite-eu-az.qbe.com"
+  vcenter: "satellite-eu-vc.qbe.com"
+
+satellite_activation_key:
+  dev: "rhel10-dev-eu"
+  test: "rhel10-test-eu"
+  prod: "rhel10-prod-eu"

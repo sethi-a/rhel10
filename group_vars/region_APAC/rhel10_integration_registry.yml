@@ -1,0 +1,11 @@
+---
+region: APAC
+
+satellite_server:
+  azure: "satellite-apac-az.qbe.com"
+  vcenter: "satellite-apac-vc.qbe.com"
+
+satellite_activation_key:
+  dev: "rhel10-dev-apac"
+  test: "rhel10-test-apac"
+  prod: "rhel10-prod-apac"
