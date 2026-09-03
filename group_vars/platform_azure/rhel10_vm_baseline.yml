@@ -2,12 +2,6 @@
 # =============================================================================
 # Azure Platform-Specific Baseline Overrides
 # =============================================================================
-# Uses separate variable names (packages_platform_required,
-# services_platform_enabled) so platform-specific lists don't replace
-# the base lists from group_vars/all/baseline.yml. The baseline_check
-# role concatenates these with the base lists at runtime.
-# A host must be a member of the platform_azure inventory group.
-# =============================================================================
 ---
 baseline_description: "RHEL 10 Azure platform overlay"
 

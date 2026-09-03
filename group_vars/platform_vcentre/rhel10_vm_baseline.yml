@@ -2,10 +2,6 @@
 # =============================================================================
 # vCenter Platform-Specific Baseline Overrides
 # =============================================================================
-# Uses separate variable names so platform-specific lists don't replace
-# the base lists. The baseline_check role concatenates these at runtime.
-# A host must be a member of the platform_vcenter inventory group.
-# =============================================================================
 ---
 baseline_description: "RHEL 10 vCenter platform overlay"
 

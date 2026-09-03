@@ -2,91 +2,12 @@
 # =============================================================================
 # RHEL 10 Expected VM State Baseline (Single Source of Truth)
 # =============================================================================
-# This file defines the desired state for all RHEL 10 systems managed by QBE.
-# It serves ALL lifecycle stages:
-#   - Day 0: CI reads this file to generate tailoring XML + blueprint TOML
-#   - Day 1: Ansible roles consume these variables to configure deployed VMs
-#   - Day 2: qbe.rhel.baseline_check role compares actual state against these values
-#
-# Maintenance:
-#   - All changes require a Git pull request and peer review.
-#   - Environment overrides: group_vars/env_*/baseline.yml
-#   - Platform overrides:    group_vars/platform_*/baseline.yml
-#   - Region endpoints:      Defined in group_vars/all/infrastructure.yml (keyed by region)
-#   - Ansible merges group_vars automatically via variable precedence.
-#
-# =============================================================================
+
 ---
 baseline_version: "1.0.0"
 baseline_description: "RHEL 10 CIS Level 1 hardened VM baseline"
 last_updated: "2026-08-25"
 maintained_by: "Linux Platform Engineering"
-
-# =============================================================================
-# REPOSITORIES
-# =============================================================================
-# Documents every package source a RHEL 10 VM must have access to.
-# Repos are delivered via Satellite Content Views — the activation key
-# (satellite_activation_keys in infrastructure.yml) binds the VM to the
-# correct Content View at registration time.
-#
-# This section does NOT configure repos on the host (register_vm does that).
-# Its purpose is traceability: for any package in the baseline, you can trace
-# it back to the repo that provides it.
-#
-# Content View promotion (dev → test → prod) controls which package versions
-# are available per environment. Version pins in env_*/baseline.yml must match
-# versions already promoted into that environment's Content View.
-repositories:
-  rhel_base:
-    repo_id: "rhel-10-for-x86_64-baseos-rpms"
-    source: "Red Hat CDN via Satellite"
-    provides:
-      - "Core OS packages (glibc, kernel, systemd, openssl, etc.)"
-      - "Security tooling (aide, openscap-scanner, audit)"
-      - "Network utilities (nftables, chrony, rsyslog)"
-  rhel_appstream:
-    repo_id: "rhel-10-for-x86_64-appstream-rpms"
-    source: "Red Hat CDN via Satellite"
-    provides:
-      - "Application runtime packages"
-      - "Python, Perl, and language modules"
-      - "Additional security and compliance tools"
-  qualys:
-    repo_id: "qbe-qualys-agent"
-    source: "Satellite custom repo (synced from Qualys)"
-    provides:
-      - "qualys-cloud-agent"
-  illumio:
-    repo_id: "qbe-illumio-ven"
-    source: "Satellite custom repo (synced from Illumio)"
-    provides:
-      - "illumio-ven"
-  defender:
-    repo_id: "qbe-microsoft-defender"
-    source: "Satellite custom repo (synced from Microsoft)"
-    provides:
-      - "mdatp"
-  dynatrace:
-    repo_id: "qbe-dynatrace-oneagent"
-    source: "Satellite custom repo (synced from Dynatrace)"
-    provides:
-      - "Dynatrace-OneAgent"
-  bigfix:
-    repo_id: "qbe-bigfix-agent"
-    source: "Satellite custom repo (synced from HCL)"
-    provides:
-      - "BESAgent"
-  ilmt:
-    repo_id: "qbe-ilmt-scanner"
-    source: "Satellite custom repo (synced from IBM)"
-    provides:
-      - "ilmt-scanner"
-  snow_discovery:
-    repo_id: "qbe-snow-discovery"
-    source: "Satellite custom repo (synced from Snow Software)"
-    provides:
-      - "snow-discovery-agent"
 
 # =============================================================================
 # PACKAGES
